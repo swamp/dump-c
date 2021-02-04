@@ -9,7 +9,8 @@
 #include <swamp-typeinfo/typeinfo.h>
 struct FldOutStream;
 
-int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int indentation, struct FldOutStream* fp);
+
+int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
 const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, char* target, size_t maxCount);
 
 #endif

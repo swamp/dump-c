@@ -27,7 +27,10 @@ static void tyran_log_implementation(enum clog_type type, const char* string)
 int rtti(SwtiChunk* chunk)
 {
     const uint8_t octets[] = {
-        0x0a,
+        0, // Major
+        1, // Minor
+        3, // Patch
+        0x0a, // Types that follow
         SwtiTypeInt,
         SwtiTypeList,
         0x05,
@@ -78,6 +81,12 @@ int rtti(SwtiChunk* chunk)
         1,
         2,
         SwtiTypeCustom,
+        5,
+        'M',
+        'a',
+        'y',
+        'b',
+        'e',
         2,
         3,
         'N',
@@ -95,7 +104,7 @@ int rtti(SwtiChunk* chunk)
     };
 
     int error = swtiDeserialize(octets, sizeof(octets), chunk);
-    if (error != 0) {
+    if (error < 0) {
         CLOG_ERROR("deserialize problem");
         return error;
     }
@@ -145,7 +154,7 @@ int main()
     tempStruct->fields[3] = lr;
     tempStruct->fields[4] = custom;
 
-    uint8_t temp[1024];
+    uint8_t temp[2048];
     FldOutStream outStream;
     fldOutStreamInit(&outStream, temp, 1024);
 
@@ -159,9 +168,9 @@ int main()
     //    swamp_value_print(outValue, "result");
 
     FldOutStream asciiOut;
-    fldOutStreamInit(&asciiOut, temp, 1024);
-    swampDumpToAscii(outValue, recordType, 0, &asciiOut);
-    fldOutStreamWriteUint8(&asciiOut, 0);
+    fldOutStreamInit(&asciiOut, temp, 2048);
+    swampDumpToAscii(outValue, recordType, 0, 0, &asciiOut);
+    fldOutStreamWriteUInt8(&asciiOut, 0);
 
     const char* temp2 = temp;
 

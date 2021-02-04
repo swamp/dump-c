@@ -1,31 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(swamp_dump C)
+project(swamp_dump_all)
 
-set(CMAKE_C_STANDARD 99)
-
-set(deps ../deps/)
-
-file(GLOB_RECURSE deps_src FOLLOW_SYMLINKS
-        "${deps}*/src/lib/*.c"
-        )
-
-file(GLOB_RECURSE lib_src FOLLOW_SYMLINKS
-        "lib/*.c"
-        )
-
-add_library(swamp_dump
-    ${deps_src}
-    ${lib_src}
-)
-
-target_compile_options(swamp_dump PRIVATE -Wall -Wextra -Wshadow -Wstrict-aliasing -ansi -pedantic -Wno-unused-function -Wno-unused-parameter)
-
-
-target_include_directories(swamp_dump PRIVATE ${deps}runtime-c/src/include)
-target_include_directories(swamp_dump PRIVATE ${deps}typeinfo-c/src/include)
-target_include_directories(swamp_dump PRIVATE ${deps}tiny-libc/src/include)
-target_include_directories(swamp_dump PRIVATE ${deps}flood-c/src/include)
-target_include_directories(swamp_dump PRIVATE ${deps}clog/src/include)
-target_include_directories(swamp_dump PUBLIC include)
-
-target_link_libraries(swamp_dump m)
+add_subdirectory("lib")
+add_subdirectory("examples")
