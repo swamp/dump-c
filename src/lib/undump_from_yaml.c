@@ -6,16 +6,20 @@
 
 #include <clog/clog.h>
 #include <flood/in_stream.h>
-#include <swamp-typeinfo/typeinfo.h>
-#include <swamp-runtime/types.h>
-#include <swamp-runtime/allocator.h>
 #include <flood/text_in_stream.h>
+#include <swamp-runtime/allocator.h>
+#include <swamp-runtime/types.h>
+#include <swamp-typeinfo/typeinfo.h>
 
 static int detectIndentation(FldTextInStream* inStream)
 {
     char ch;
     int column;
     while (1) {
+        if (inStream->inStream->pos + 1 == inStream->inStream->size) {
+            column = inStream->column;
+            break;
+        }
         int error = fldTextInStreamReadCh(inStream, &ch);
         if (error < 0) {
             return error;
@@ -25,14 +29,14 @@ static int detectIndentation(FldTextInStream* inStream)
         } else if (ch == 13) {
             // Just ignore strange CR characters
         } else {
-                fldTextInStreamUnreadCh(inStream);
-                column = inStream->column;
-                break;
-            }
+            fldTextInStreamUnreadCh(inStream);
+            column = inStream->column;
+            break;
+        }
     }
 
     if ((column % 2) != 0) {
-        CLOG_SOFT_ERROR("not a proper indentation column:%d '%c'", column+1, *inStream->inStream->p);
+        CLOG_SOFT_ERROR("not a proper indentation column:%d '%c'", column + 1, *inStream->inStream->p);
         return -4;
     }
 
@@ -41,7 +45,6 @@ static int detectIndentation(FldTextInStream* inStream)
 
 int requireIndentation(FldTextInStream* inStream, int requiredIndentation)
 {
-    fldTextInStreamDebug(inStream, "require indentation");
     int indentation = detectIndentation(inStream);
     if (indentation < 0) {
         return indentation;
@@ -87,7 +90,6 @@ int readVariableIdentifier(FldTextInStream* inStream, const char** fieldName)
     int charsFound = 0;
     static char name[128];
 
-
     while (1) {
         int error = fldTextInStreamReadCh(inStream, &ch);
         if (error < 0) {
@@ -112,11 +114,12 @@ int readTypeIdentifierValue(FldTextInStream* inStream, const char** fieldName)
     if (skipErr < 0) {
         return skipErr;
     }
-    fldTextInStreamDebug(inStream, "type identifier");
+
     return readVariableIdentifier(inStream, fieldName);
 }
 
-int skipWhitespaceAndEndOfLine(FldTextInStream* inStream) {
+int skipWhitespaceAndEndOfLine(FldTextInStream* inStream)
+{
     int errorCode = skipLeadingSpaces(inStream);
     if (errorCode < 0) {
         return errorCode;
@@ -159,7 +162,8 @@ static int readBoolean(FldTextInStream* inStream)
     return -5;
 }
 
-static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foundString) {
+static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foundString)
+{
     char ch;
     int charsFound = 0;
     static char name[128];
@@ -172,7 +176,7 @@ static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foun
         if (ch != 10) {
             name[charsFound++] = ch;
         } else {
-            //fldInStreamExUnread(inStream);
+            // fldInStreamExUnread(inStream);
             break;
         }
     }
@@ -182,7 +186,45 @@ static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foun
     return charsFound;
 }
 
-static int readStringValue(FldTextInStream* inStream, const char** foundString) {
+int readBlob(FldTextInStream* inStream, int indentation, swamp_allocator* allocator, swamp_blob** out)
+{
+    FldTextInStreamState save;
+
+    uint8_t* buf = tc_malloc(16 * 1024);
+    uint8_t* p = buf;
+
+    while (1) {
+        fldTextInStreamTell(inStream, &save);
+        int detectedIndentation = detectIndentation(inStream);
+        if (detectedIndentation < 0) {
+            fldTextInStreamSeek(inStream, &save);
+            return detectedIndentation;
+        }
+        if (detectedIndentation != indentation) {
+            fldTextInStreamSeek(inStream, &save);
+            break;
+        }
+
+        const char* foundString;
+        int charCount = readStringUntilEndOfLine(inStream, &foundString);
+        if (charCount < 0) {
+            return charCount;
+        }
+
+        for (size_t i = 0; i < charCount; ++i) {
+            *p++ = foundString[i];
+        }
+    }
+
+    *out = swamp_allocator_alloc_blob(allocator, buf, p - buf, 0);
+
+    tc_free(buf);
+
+    return 0;
+}
+
+static int readStringValue(FldTextInStream* inStream, const char** foundString)
+{
     int errorCode = skipLeadingSpaces(inStream);
     if (errorCode < 0) {
         return errorCode;
@@ -199,13 +241,12 @@ static int checkListContinuation(FldTextInStream* inStream, int indentation)
 
     int detectedIndentation = detectIndentation(inStream);
     if (detectedIndentation < 0) {
-        CLOG_VERBOSE("list wasn't continued because indentation returned error");
+        CLOG_WARN("list wasn't continued because indentation returned error");
         fldTextInStreamSeek(inStream, &save);
         return detectedIndentation;
     }
 
     if (detectedIndentation != indentation) {
-        CLOG_VERBOSE("list wasn't continued because indentation was wrong");
         fldTextInStreamSeek(inStream, &save);
         return 0;
     }
@@ -233,7 +274,8 @@ static int checkListContinuation(FldTextInStream* inStream, int indentation)
     return 1;
 }
 
-static int readIntegerValue(FldTextInStream* inStream, int32_t* v) {
+static int readIntegerValue(FldTextInStream* inStream, int32_t* v)
+{
     int errorCode = skipLeadingSpaces(inStream);
     if (errorCode < 0) {
         return errorCode;
@@ -277,9 +319,8 @@ int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredInd
     return 0;
 }
 
-
-int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct swamp_allocator* allocator, const SwtiType* tiType,
-    const swamp_value** out)
+int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct swamp_allocator* allocator,
+                            const SwtiType* tiType, const swamp_value** out)
 {
     switch (tiType->type) {
         case SwtiTypeInt: {
@@ -312,10 +353,10 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             for (size_t i = 0; i < record->fieldCount; ++i) {
                 const SwtiRecordTypeField* field = &record->fields[i];
                 const char* foundName;
-                CLOG_VERBOSE("reading field %s", field->name);
                 int errorCode = readFieldNameColonWithIndentation(inStream, indentation, &foundName);
                 if (errorCode < 0) {
-                    CLOG_SOFT_ERROR("couldn't read field '%s' encountered '%s' errorCode:%d", field->name, foundName, errorCode);
+                    CLOG_SOFT_ERROR("couldn't read field '%s' encountered '%s' errorCode:%d", field->name, foundName,
+                                    errorCode);
                     return errorCode;
                 }
                 if (!tc_str_equal(foundName, field->name)) {
@@ -323,7 +364,8 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
                     return -6;
                 }
                 int subIndentation = indentation;
-                if ((field->fieldType->type == SwtiTypeRecord) || (field->fieldType->type == SwtiTypeList)) {
+                if ((field->fieldType->type == SwtiTypeRecord) || (field->fieldType->type == SwtiTypeList) ||
+                    (field->fieldType->type == SwtiTypeBlob)) {
                     int skipError = skipWhitespaceAndEndOfLine(inStream);
                     if (skipError < 0) {
                         CLOG_SOFT_ERROR("this wasn't a end of line")
@@ -331,7 +373,8 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
                     }
                     subIndentation++;
                 }
-                int resultCode = swampDumpFromYamlHelper(inStream, subIndentation, allocator, field->fieldType, &temp->fields[i]);
+                int resultCode = swampDumpFromYamlHelper(inStream, subIndentation, allocator, field->fieldType,
+                                                         &temp->fields[i]);
                 if (resultCode < 0) {
                     CLOG_SOFT_ERROR("couldn't read value for field %s' (%d)", field->name, resultCode);
                     return resultCode;
@@ -357,7 +400,6 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
 
             const swamp_value** targetValues = tc_malloc_type_count(swamp_value*, maxListLength);
             while (1) {
-                CLOG_VERBOSE("reading list %d", listLength);
                 int didContinue = checkListContinuation(inStream, indentation);
                 if (didContinue < 0) {
                     return didContinue;
@@ -365,7 +407,8 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
                 if (!didContinue) {
                     break;
                 }
-                int errorCode = swampDumpFromYamlHelper(inStream, indentation+1, allocator, list->itemType, &targetValues[listLength]);
+                int errorCode = swampDumpFromYamlHelper(inStream, indentation + 1, allocator, list->itemType,
+                                                        &targetValues[listLength]);
                 if (errorCode < 0) {
                     CLOG_SOFT_ERROR("couldn't read list item %d", listLength);
                     return errorCode;
@@ -387,13 +430,15 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             }
 
             int enumIndex = -1;
-            for (size_t i=0; i<custom->variantCount;++i) {
+            for (size_t i = 0; i < custom->variantCount; ++i) {
                 const SwtiCustomTypeVariant* variant = &custom->variantTypes[i];
-                CLOG_VERBOSE("comparing %s and %s", variant->name, foundVariantName);
                 if (tc_str_equal(variant->name, foundVariantName)) {
                     enumIndex = i;
                     break;
                 }
+            }
+            if (enumIndex < 0) {
+                return -4;
             }
 
             const SwtiCustomTypeVariant* variant = &custom->variantTypes[enumIndex];
@@ -407,7 +452,7 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
         }
         case SwtiTypeAlias: {
             const SwtiAliasType* alias = (const SwtiAliasType*) tiType;
-            return swampDumpFromYamlHelper(inStream, indentation,  allocator, alias->targetType, out);
+            return swampDumpFromYamlHelper(inStream, indentation, allocator, alias->targetType, out);
         }
         case SwtiTypeFunction: {
             CLOG_SOFT_ERROR("functions can not be serialized");
@@ -418,8 +463,13 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             return -1;
         }
         case SwtiTypeBlob: {
-            CLOG_SOFT_ERROR("blob can not be serialized yet");
-            return -1;
+            const swamp_blob* blob;
+            int errorCode = readBlob(inStream, indentation, allocator, &blob);
+            if (errorCode < 0) {
+                return errorCode;
+            }
+            *out = blob;
+            break;
         }
         default:
             CLOG_ERROR("can not deserialize dump from type %d", tiType->type);
@@ -431,7 +481,8 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
 }
 
 int swampDumpFromYaml(FldInStream* inStream, struct swamp_allocator* allocator, const SwtiType* tiType,
-    const swamp_value** out) {
+                      const swamp_value** out)
+{
     FldTextInStream textStream;
     fldTextInStreamInit(&textStream, inStream);
     return swampDumpFromYamlHelper(&textStream, 0, allocator, tiType, out);

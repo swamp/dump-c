@@ -155,7 +155,8 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
             break;
         }
         case SwtiTypeBlob: {
-            printWithColorf(fp, 91, " blob ");
+            const swamp_blob* blob = swamp_value_blob(v);
+            printWithColorf(fp, 91, " blob %d", blob->octet_count);
         }
     }
 

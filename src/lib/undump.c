@@ -87,6 +87,17 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, struct swamp_allocator* all
             CLOG_SOFT_ERROR("functions can not be serialized");
             return -1;
         }
+        case SwtiTypeBlob: {
+            uint32_t octetCount;
+            int errorCode = fldInStreamReadUInt32(inStream, &octetCount);
+            if (errorCode < 0) {
+                return errorCode;
+            }
+            *out = swamp_allocator_alloc_blob(allocator, octetCount == 0 ? 0 : inStream->p, octetCount, 0);
+            inStream->p += octetCount;
+            inStream->pos += octetCount;
+            break;
+        }
         default:
             CLOG_ERROR("can not deserialize dump from type %d", tiType->type);
             return -1;

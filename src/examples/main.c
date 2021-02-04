@@ -28,7 +28,7 @@ int rtti(SwtiChunk* chunk)
         0, // Major
         1, // Minor
         3, // Patch
-        0x0a, // Types that follow
+        0x0b, // Types that follow
         SwtiTypeInt,
         SwtiTypeList,
         0x05,
@@ -42,7 +42,7 @@ int rtti(SwtiChunk* chunk)
         'l',
         4,
         SwtiTypeRecord,
-        5,
+        6,
         1,
         'a',
         9,
@@ -65,6 +65,10 @@ int rtti(SwtiChunk* chunk)
         'm',
         'a',
         8,
+        2,
+        't',
+        'i',
+        10,
         SwtiTypeRecord,
         2,
         1,
@@ -99,6 +103,7 @@ int rtti(SwtiChunk* chunk)
         1,
         0,
         SwtiTypeBoolean,
+        SwtiTypeBlob
     };
 
     int error = swtiDeserialize(octets, sizeof(octets), chunk);
@@ -119,8 +124,11 @@ int main()
     SwtiChunk chunk;
     rtti(&chunk);
 
+    uint8_t temp[2048];
+    swtiChunkDebugOutput(&chunk, "swti");
+
     const SwtiType* recordType = chunk.types[4];
-    swamp_struct* tempStruct = swamp_allocator_alloc_struct(&allocator, 5);
+    swamp_struct* tempStruct = swamp_allocator_alloc_struct(&allocator, 6);
 
     //    const swamp_value *v = swamp_allocator_alloc_integer(&allocator, 42);
 
@@ -152,7 +160,9 @@ int main()
     tempStruct->fields[3] = lr;
     tempStruct->fields[4] = custom;
 
-    uint8_t temp[2048];
+    tempStruct->fields[5] = swamp_allocator_alloc_blob(&allocator, "hello", 5, 0);
+
+
     FldOutStream outStream;
     fldOutStreamInit(&outStream, temp, 1024);
 
@@ -176,14 +186,16 @@ int main()
     fputs("\n", stderr);
 
 
-    const char *testYaml = " \na: True\nname: hello\npos:   \n  x:  10\n  y: 120\nar: \n  - x: 11\n    y: 121\n  - x: 12\n    y: 122\nma: Not\n";
+    const char *testYaml = " \na: True\nname: hello\npos:   \n  x:  10\n  y: 120\nar: \n  - x: 11\n    y: 121\n  - x: 12\n    y: 122\nma: Not\nti:\n  1234567890\n  abcdefghij\n\n";
 
     const swamp_value* valueFromYaml;
     FldInStream yamlIn;
     fldInStreamInit(&yamlIn, testYaml, strlen(testYaml));
 
     int yamlError = swampDumpFromYaml(&yamlIn, &allocator, recordType, &valueFromYaml);
-    CLOG_INFO("found name (code: %d)", yamlError);
+    if (yamlError < 0) {
+        return yamlError;
+    }
 
     FldOutStream asciiOutAfterYaml;
     fldOutStreamInit(&asciiOutAfterYaml, temp, 2048);

@@ -74,8 +74,9 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const swamp_value* v, const Sw
             return -1;
         } break;
         case SwtiTypeBlob: {
-            CLOG_SOFT_ERROR("blob can not be serialized to a dump format");
-            return -1;
+            const swamp_blob* blob = swamp_value_blob(v);
+            fldOutStreamWriteUInt32(stream, blob->octet_count);
+            fldOutStreamWriteOctets(stream, blob->octets, blob->octet_count);
         } break;
         case SwtiTypeAlias: {
             const SwtiAliasType* alias = (const SwtiAliasType*) type;
