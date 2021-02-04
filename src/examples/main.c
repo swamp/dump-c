@@ -3,9 +3,13 @@
  *  Licensed under the MIT License. See LICENSE in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 #include <clog/clog.h>
+#include <clog/console.h>
 #include <stdio.h>
+
 #include <swamp-dump/dump.h>
 #include <swamp-dump/dump_ascii.h>
+#include <swamp-dump/dump_yaml.h>
+
 #include <swamp-runtime/allocator.h>
 #include <swamp-runtime/print.h>
 
@@ -17,12 +21,6 @@
 #include <flood/out_stream.h>
 
 clog_config g_clog;
-
-static void tyran_log_implementation(enum clog_type type, const char* string)
-{
-    (void) type;
-    fprintf(stderr, "%s\n", string);
-}
 
 int rtti(SwtiChunk* chunk)
 {
@@ -114,7 +112,7 @@ int rtti(SwtiChunk* chunk)
 
 int main()
 {
-    g_clog.log = tyran_log_implementation;
+    g_clog.log = clog_console;
     swamp_allocator allocator;
     swamp_allocator_init(&allocator);
 
@@ -175,6 +173,25 @@ int main()
     const char* temp2 = temp;
 
     fputs(temp2, stderr);
+    fputs("\n", stderr);
+
+
+    const char *testYaml = " \na: True\nname: hello\npos:   \n  x:  10\n  y: 120\nar: \n  - x: 11\n    y: 121\n  - x: 12\n    y: 122\nma: Not\n";
+
+    const swamp_value* valueFromYaml;
+    FldInStream yamlIn;
+    fldInStreamInit(&yamlIn, testYaml, strlen(testYaml));
+
+    int yamlError = swampDumpFromYaml(&yamlIn, &allocator, recordType, &valueFromYaml);
+    CLOG_INFO("found name (code: %d)", yamlError);
+
+    FldOutStream asciiOutAfterYaml;
+    fldOutStreamInit(&asciiOutAfterYaml, temp, 2048);
+    swampDumpToAscii(valueFromYaml, recordType, 0, 0, &asciiOutAfterYaml);
+    fldOutStreamWriteUInt8(&asciiOutAfterYaml, 0);
+    const char* yamlTemp = temp;
+
+    fputs(yamlTemp, stderr);
     fputs("\n", stderr);
 
     return 0;
