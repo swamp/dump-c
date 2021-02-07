@@ -24,8 +24,6 @@ add_library(swamp_dump
 target_compile_options(swamp_dump PRIVATE -Wall -Wextra -Wshadow -Wstrict-aliasing -ansi -pedantic -Wno-unused-function -Wno-unused-parameter)
 target_compile_definitions(swamp_dump PRIVATE CONFIGURATION_DEBUG)
 
-message("include: ${deps}clog/src/include")
-
 target_include_directories(swamp_dump PUBLIC ${deps}runtime-c/src/include)
 target_include_directories(swamp_dump PUBLIC ${deps}typeinfo-c/src/include)
 target_include_directories(swamp_dump PRIVATE ${deps}tiny-libc/src/include)

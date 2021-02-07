@@ -138,6 +138,48 @@ int skipWhitespaceAndEndOfLine(FldTextInStream* inStream)
     return 0;
 }
 
+
+typedef enum Marker {
+    MarkerNone,
+    MarkerHex,
+    MarkerAscii,
+} Marker;
+
+int skipWhitespaceAndBreakMarkerEndOfLine(FldTextInStream* inStream, int* marker)
+{
+    int errorCode = skipLeadingSpaces(inStream);
+    if (errorCode < 0) {
+        return errorCode;
+    }
+
+    char ch;
+    int error = fldTextInStreamReadCh(inStream, &ch);
+    if (error < 0) {
+        return error;
+    }
+
+    if (ch == 10) {
+        *marker = MarkerNone;
+        return 0;
+    } else if (ch == '>') {
+        char ch2;
+
+        int error = fldTextInStreamReadCh(inStream, &ch2);
+        if (error < 0) {
+            return error;
+        }
+        if (ch2 == 'x') {
+            *marker = MarkerHex;
+        }
+        *marker = MarkerAscii;
+        if (ch2 == 10) {
+            return 0;
+        }
+    }
+
+    return skipWhitespaceAndEndOfLine(inStream);
+}
+
 static int readBoolean(FldTextInStream* inStream)
 {
     const char* foundName;
@@ -366,7 +408,8 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
                 int subIndentation = indentation;
                 if ((field->fieldType->type == SwtiTypeRecord) || (field->fieldType->type == SwtiTypeList) ||
                     (field->fieldType->type == SwtiTypeBlob)) {
-                    int skipError = skipWhitespaceAndEndOfLine(inStream);
+                    Marker marker;
+                    int skipError = skipWhitespaceAndBreakMarkerEndOfLine(inStream, &marker);
                     if (skipError < 0) {
                         CLOG_SOFT_ERROR("this wasn't a end of line")
                         return skipError;

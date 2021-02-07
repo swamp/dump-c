@@ -15,7 +15,6 @@ add_executable(swamp_dump_example
 target_compile_options(swamp_dump_example PRIVATE -Wall -Wextra -Wshadow -Wstrict-aliasing -ansi -pedantic -Wno-unused-function -Wno-unused-parameter)
 target_compile_definitions(swamp_dump_example PRIVATE CONFIGURATION_DEBUG)
 
-target_include_directories(swamp_dump_example PUBLIC include)
 target_include_directories(swamp_dump_example PUBLIC ../../deps/clog/src/include)
 target_include_directories(swamp_dump_example PUBLIC ../../deps/tiny-libc/src/include)
 

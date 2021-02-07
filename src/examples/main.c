@@ -9,6 +9,7 @@
 #include <swamp-dump/dump.h>
 #include <swamp-dump/dump_ascii.h>
 #include <swamp-dump/dump_yaml.h>
+#include <swamp-dump/types.h>
 
 #include <swamp-runtime/allocator.h>
 #include <swamp-runtime/print.h>
@@ -177,16 +178,16 @@ int main()
 
     FldOutStream asciiOut;
     fldOutStreamInit(&asciiOut, temp, 2048);
-    swampDumpToAscii(outValue, recordType, 0, 0, &asciiOut);
+    swampDumpToAscii(outValue, recordType, 0x02 | 0x04, 0, &asciiOut);
     fldOutStreamWriteUInt8(&asciiOut, 0);
 
     const char* temp2 = temp;
 
     fputs(temp2, stderr);
-    fputs("\n", stderr);
+    fputs("\n\n", stderr);
 
 
-    const char *testYaml = " \na: True\nname: hello\npos:   \n  x:  10\n  y: 120\nar: \n  - x: 11\n    y: 121\n  - x: 12\n    y: 122\nma: Not\nti:\n  1234567890\n  abcdefghij\n\n";
+    const char *testYaml = " \na: True\nname: hello\npos:   \n  x:  10\n  y: 120\nar: \n  - x: 11\n    y: 121\n  - x: 12\n    y: 122\nma: Not\nti: >\n  1234567890\n  abcdefghij\n\n";
 
     const swamp_value* valueFromYaml;
     FldInStream yamlIn;
@@ -199,11 +200,12 @@ int main()
 
     FldOutStream asciiOutAfterYaml;
     fldOutStreamInit(&asciiOutAfterYaml, temp, 2048);
-    swampDumpToAscii(valueFromYaml, recordType, 0, 0, &asciiOutAfterYaml);
+    swampDumpToAscii(valueFromYaml, recordType, 0x02 | 0x04, 0, &asciiOutAfterYaml);
     fldOutStreamWriteUInt8(&asciiOutAfterYaml, 0);
-    const char* yamlTemp = temp;
 
-    fputs(yamlTemp, stderr);
+    fputs("TOYAML\n", stderr);
+    fputs(swampDumpToYamlString(valueFromYaml, recordType, swampDumpFlagBlobExpanded | swampDumpFlagBlobAscii, temp, 1024), stderr);
+
     fputs("\n", stderr);
 
     return 0;
