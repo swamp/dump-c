@@ -193,9 +193,9 @@ static int readBoolean(FldTextInStream* inStream)
         return errorCode;
     }
 
-    if (tc_str_equal(foundName, "True")) {
+    if (tc_str_equal(foundName, "true")) {
         return 1;
-    } else if (tc_str_equal(foundName, "False")) {
+    } else if (tc_str_equal(foundName, "false")) {
         return 0;
     }
 
@@ -528,5 +528,18 @@ int swampDumpFromYaml(FldInStream* inStream, struct swamp_allocator* allocator, 
 {
     FldTextInStream textStream;
     fldTextInStreamInit(&textStream, inStream);
+
+    if (*inStream->p == '%') {
+        const char* foundString;
+        readStringUntilEndOfLine(&textStream, &foundString);
+        if (!tc_str_equal("%YAML 1.2", foundString)) {
+            return -2;
+        }
+        readStringUntilEndOfLine(&textStream, &foundString);
+        if (!tc_str_equal("---", foundString)) {
+            return -2;
+        }
+    }
+
     return swampDumpFromYamlHelper(&textStream, 0, allocator, tiType, out);
 }

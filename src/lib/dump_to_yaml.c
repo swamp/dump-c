@@ -57,7 +57,7 @@ int swampDumpToYaml(const swamp_value* v, const SwtiType* type, int flags, int i
     switch (type->type) {
         case SwtiTypeBoolean: {
             swamp_bool value = swamp_value_bool(v);
-            printWithColorf(fp, 92, "%s\n", value ? "True" : "False");
+            printWithColorf(fp, 92, "%s\n", value ? "true" : "false");
         } break;
         case SwtiTypeInt: {
             swamp_int32 value = swamp_value_int(v);
@@ -193,6 +193,7 @@ const char* swampDumpToYamlString(const swamp_value* v, const SwtiType* type, in
 
     fldOutStreamInit(&outStream, (uint8_t*) target, maxCount - 6); // reserve for zero
 
+    fldOutStreamWritef(&outStream, "%YAML 1.2\n---\n");
     int errorCode = swampDumpToYaml(v, type, flags, 0, 0, &outStream);
     if (errorCode != 0) {
         return 0;

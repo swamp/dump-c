@@ -187,7 +187,7 @@ int main()
     fputs("\n\n", stderr);
 
 
-    const char *testYaml = " \na: True\nname: hello\npos:   \n  x:  10\n  y: 120\nar: \n  - x: 11\n    y: 121\n  - x: 12\n    y: 122\nma: Not\nti: >\n  1234567890\n  abcdefghij\n\n";
+    const char *testYaml = "%YAML 1.2\n---\n \na: true\nname: hello\npos:   \n  x:  10\n  y: 120\nar: \n  - x: 11\n    y: 121\n  - x: 12\n    y: 122\nma: Not\nti: >\n  1234567890\n  abcdefghij\n\n";
 
     const swamp_value* valueFromYaml;
     FldInStream yamlIn;
