@@ -16,8 +16,8 @@ static int detectIndentation(FldTextInStream* inStream)
     char ch;
     int column;
     while (1) {
-        if (inStream->inStream->pos + 1 == inStream->inStream->size) {
-            column = inStream->column;
+        if (inStream->inStream->pos == inStream->inStream->size) {
+            column = 0;
             break;
         }
         int error = fldTextInStreamReadCh(inStream, &ch);
@@ -51,7 +51,7 @@ int requireIndentation(FldTextInStream* inStream, int requiredIndentation)
     }
 
     if (indentation != requiredIndentation) {
-        CLOG_SOFT_ERROR("unexpected indentation. required %d but encountered %d", requiredIndentation, indentation)
+        CLOG_SOFT_ERROR("%s:unexpected indentation.  required %d but encountered %d", fldTextInStreamPositionString(inStream), requiredIndentation, indentation)
         return -4;
     }
 
@@ -406,8 +406,9 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
                     return -6;
                 }
                 int subIndentation = indentation;
-                if ((field->fieldType->type == SwtiTypeRecord) || (field->fieldType->type == SwtiTypeList) ||
-                    (field->fieldType->type == SwtiTypeBlob)) {
+                const SwtiType* unaliasedType = swtiUnalias(field->fieldType);
+                if ((unaliasedType->type == SwtiTypeRecord) || (unaliasedType->type == SwtiTypeList) ||
+                    (unaliasedType->type == SwtiTypeBlob)) {
                     Marker marker;
                     int skipError = skipWhitespaceAndBreakMarkerEndOfLine(inStream, &marker);
                     if (skipError < 0) {
