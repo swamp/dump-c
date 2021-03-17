@@ -116,7 +116,7 @@ static int readVersion(FldInStream* inStream)
 
     int supportedVersion = (major == 0) && (minor == 1);
     if (!supportedVersion) {
-        CLOG_SOFT_ERROR("wrong version %d.%d.%d", major, minor, patch);
+        CLOG_SOFT_ERROR("swamp-dump: wrong version %d.%d.%d", major, minor, patch);
         return -1;
     }
 
@@ -127,7 +127,7 @@ int swampDumpFromOctets(FldInStream* inStream, struct swamp_allocator* allocator
                         const swamp_value** out)
 {
     int error;
-    if ((error = readVersion(inStream)) != 0) {
+    if ((error = readVersion(inStream)) < 0) {
         return error;
     }
 

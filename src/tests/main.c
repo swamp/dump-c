@@ -116,11 +116,58 @@ int rtti(SwtiChunk* chunk)
     return 0;
 }
 
-int main(int argc, const char* argv[])
+int main()
 {
     g_clog.log = clog_console;
     swamp_allocator allocator;
     swamp_allocator_init(&allocator);
+
+    SwtiChunk chunk;
+    rtti(&chunk);
+
+    uint8_t temp[2048];
+    swtiChunkDebugOutput(&chunk, "swti");
+
+    const SwtiType* recordType = chunk.types[4];
+    swamp_struct* tempStruct = swamp_allocator_alloc_struct(&allocator, 6);
+
+    //    const swamp_value *v = swamp_allocator_alloc_integer(&allocator, 42);
+
+    const swamp_value* b = swamp_allocator_alloc_boolean(&allocator, 1);
+
+    swamp_struct* posStruct = swamp_allocator_alloc_struct(&allocator, 2);
+
+    const swamp_value* x = swamp_allocator_alloc_integer(&allocator, 10);
+    const swamp_value* y = swamp_allocator_alloc_integer(&allocator, 120);
+    posStruct->fields[0] = x;
+    posStruct->fields[1] = y;
+
+    const swamp_value* str = swamp_allocator_alloc_string(&allocator, "hello");
+
+    swamp_struct* ar = swamp_allocator_alloc_struct(&allocator, 1);
+    ar->fields[0] = posStruct;
+
+    swamp_list* lr = swamp_allocator_alloc_list_create(&allocator, &posStruct, 1);
+
+    //    swamp_enum* custom = swamp_allocator_alloc_enum(&allocator, 1, 1);
+    //    const swamp_value *maybeParamInt = swamp_allocator_alloc_integer(&allocator, 99);
+    // custom->fields[0] = maybeParamInt;
+
+    swamp_enum* custom = swamp_allocator_alloc_enum(&allocator, 0, 0);
+
+    tempStruct->fields[0] = b;
+    tempStruct->fields[1] = str;
+    tempStruct->fields[2] = posStruct;
+    tempStruct->fields[3] = lr;
+    tempStruct->fields[4] = custom;
+
+    tempStruct->fields[5] = swamp_allocator_alloc_blob(&allocator, "hello", 5, 0);
+
+
+    FldOutStream outStream;
+    fldOutStreamInit(&outStream, temp, 1024);
+
+    swampDumpToOctets(&outStream, tempStruct, recordType);
 
     struct FldInStream inStream;
     fldInStreamInit(&inStream, temp, outStream.pos);

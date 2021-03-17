@@ -6,6 +6,7 @@
 #define SWAMP_DUMP_DUMP_YAML_H
 
 struct FldInStream;
+struct FldOutStream;
 struct SwtiType;
 struct swamp_value;
 struct swamp_allocator;

@@ -104,7 +104,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
             const swamp_struct* p = swamp_value_struct(v);
             const SwtiArrayType* array = (const SwtiArrayType*) type;
 
-            printWithColorf(fp, 94, "A[ ", fp);
+            printWithColorf(fp, 94, "[| ", fp);
             for (size_t i = 0; i < p->info.field_count; i++) {
                 if (i > 0) {
                     printNewLineWithTabs(fp, indentation);
@@ -115,7 +115,28 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                     return errorCode;
                 }
             }
-            printWithColorf(fp, 94, " ]");
+            printWithColorf(fp, 94, " |]");
+        } break;
+        case SwtiTypeTuple: {
+            const swamp_struct* p = swamp_value_struct(v);
+            const SwtiTupleType* tuple = (const SwtiTupleType*) type;
+
+            if (p->info.field_count != tuple->parameterCount) {
+                CLOG_SOFT_ERROR("mismatch tuple and struct types here");
+                return -48;
+            }
+            printWithColorf(fp, 94, "( ", fp);
+            for (size_t i = 0; i < p->info.field_count; i++) {
+                if (i > 0) {
+                    printNewLineWithTabs(fp, indentation);
+                    printWithColorf(fp, 35, ", ");
+                }
+                int errorCode = swampDumpToAscii(p->fields[i], tuple->parameterTypes[i], flags, indentation + 1, fp);
+                if (errorCode != 0) {
+                    return errorCode;
+                }
+            }
+            printWithColorf(fp, 94, " )");
         } break;
         case SwtiTypeList: {
             const swamp_list* p = swamp_value_list(v);

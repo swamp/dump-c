@@ -73,6 +73,14 @@ int swampDumpToYaml(const swamp_value* v, const SwtiType* type, int flags, int i
             const swamp_string* p = swamp_value_string(v);
             printWithColorf(fp, 33, "%s\n", p->characters);
         } break;
+        case SwtiTypeChar: {
+            const swamp_int* p = swamp_value_int(v);
+            printWithColorf(fp, 33, "%c\n", p->value);
+        } break;
+        case SwtiTypeResourceName: {
+            const swamp_string* p = swamp_value_string(v);
+            printWithColorf(fp, 33, "'%s'\n", p->characters);
+        } break;
         case SwtiTypeRecord: {
             const swamp_struct* p = swamp_value_struct(v);
             const SwtiRecordType* record = (const SwtiRecordType*) type;
@@ -104,6 +112,24 @@ int swampDumpToYaml(const swamp_value* v, const SwtiType* type, int flags, int i
                 printNewLineWithTabs(fp, indentation-alreadyindent);
                 printWithColorf(fp, 35, "- ");
                 int errorCode = swampDumpToYaml(p->fields[i], array->itemType, flags, indentation + 1, alreadyindent, fp);
+                if (errorCode != 0) {
+                    return errorCode;
+                }
+            }
+        } break;
+        case SwtiTypeTuple: {
+            const swamp_struct* p = swamp_value_struct(v);
+            const SwtiTupleType* tuple = (const SwtiTupleType*) type;
+
+            if (tuple->parameterCount != p->info.field_count) {
+                return -48;
+            }
+
+            printWithColorf(fp, 94, "\n", fp);
+            for (size_t i = 0; i < p->info.field_count; i++) {
+                printNewLineWithTabs(fp, indentation-alreadyindent);
+                printWithColorf(fp, 35, "- ");
+                int errorCode = swampDumpToYaml(p->fields[i], tuple->parameterTypes[i], flags, indentation + 1, alreadyindent, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
