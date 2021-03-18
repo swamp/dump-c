@@ -193,6 +193,19 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
 
             if (flags & swampDumpFlagBlobExpanded) {
                 size_t count = blob->octet_count > 2048 ? 2048 : blob->octet_count;
+                if (flags & swampDumpFlagBlobAutoFormat) {
+                    int allIsPrintable = 1;
+                    for (size_t i=0; i < count;++i) {
+                        uint8_t ch = blob->octets[i];
+                        if (ch < 32 || ch > 126) {
+                            allIsPrintable = 0;
+                            break;
+                        }
+                    }
+                    if (allIsPrintable) {
+                        flags |= swampDumpFlagBlobAscii;
+                    }
+                }
                 if (flags & swampDumpFlagBlobAscii) {
                     for (size_t i=0; i<count;++i) {
                         if ((i % 64) == 0) {
@@ -205,7 +218,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                         if ((i % 32) == 0) {
                             printNewLineWithDots(fp, indentation+1);
                         }
-                        printWithColorf(fp, 12, "%02X", blob->octets[i]);
+                        printWithColorf(fp, 12, "%02X ", blob->octets[i]);
                     }
                 }
             }
@@ -215,13 +228,13 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
     return 0;
 }
 
-const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, char* target, size_t maxCount)
+const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, int flags, char* target, size_t maxCount)
 {
     FldOutStream outStream;
 
     fldOutStreamInit(&outStream, (uint8_t*) target, maxCount - 6); // reserve for zero
 
-    int errorCode = swampDumpToAscii(v, type, 0, 0, &outStream);
+    int errorCode = swampDumpToAscii(v, type, flags, 0, &outStream);
     if (errorCode != 0) {
         return 0;
     }

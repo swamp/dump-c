@@ -55,6 +55,17 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const swamp_value* v, const Sw
                 }
             }
         } break;
+        case SwtiTypeTuple: {
+            const SwtiTupleType* tuple = (const SwtiTupleType *) type;
+            const swamp_struct* p = swamp_value_struct(v);
+
+            for (size_t i = 0; i < p->info.field_count; i++) {
+                int errorCode = swampDumpToOctetsHelper(stream, p->fields[i], tuple->parameterTypes[i]);
+                if (errorCode != 0) {
+                    return errorCode;
+                }
+            }
+        } break;
         case SwtiTypeList: {
             const SwtiListType* list = (const SwtiListType*) type;
             const swamp_list* p = swamp_value_list(v);
@@ -98,6 +109,8 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const swamp_value* v, const Sw
             }
             break;
         }
+        default:
+            CLOG_ERROR("Unknown type to serialize %d", type->type);
     }
 
     return 0;

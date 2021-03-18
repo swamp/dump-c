@@ -53,6 +53,15 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, struct swamp_allocator* all
             *out = (const swamp_value*) temp;
             break;
         }
+        case SwtiTypeTuple: {
+            const SwtiTupleType* tuple = (const SwtiTupleType*) tiType;
+            swamp_struct* temp = (swamp_struct*) swamp_allocator_alloc_struct(allocator, tuple->parameterCount);
+            for (size_t i = 0; i < tuple->parameterCount; ++i) {
+                swampDumpFromOctetsHelper(inStream, allocator, tuple->parameterTypes[i], &temp->fields[i]);
+            }
+            *out = (const swamp_value*) temp;
+            break;
+        }
         case SwtiTypeList: {
             const SwtiListType* list = (const SwtiListType*) tiType;
             uint8_t listLength;

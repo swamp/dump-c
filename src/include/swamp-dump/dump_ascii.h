@@ -11,6 +11,6 @@ struct FldOutStream;
 
 
 int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
-const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, char* target, size_t maxCount);
+const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, int flags, char* target, size_t maxCount);
 
 #endif
