@@ -232,16 +232,19 @@ const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, i
 {
     FldOutStream outStream;
 
-    fldOutStreamInit(&outStream, (uint8_t*) target, maxCount - 6); // reserve for zero
-
-    int errorCode = swampDumpToAscii(v, type, flags, 0, &outStream);
-    if (errorCode != 0) {
+    if (maxCount < 64) {
         return 0;
     }
 
+    fldOutStreamInit(&outStream, (uint8_t*) target, maxCount - 6); // reserve for zero
+
+    int errorCode = swampDumpToAscii(v, type, flags, 0, &outStream);
     outStream.size = maxCount;
     fldOutStreamWritef(&outStream, "\033[0m");
     fldOutStreamWriteUInt8(&outStream, 0);
+    if (errorCode != 0) {
+        return 0;
+    }
 
     return target;
 }
