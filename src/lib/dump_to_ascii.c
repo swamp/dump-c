@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <swamp-dump/dump.h>
 #include <swamp-dump/types.h>
+#include <swamp-runtime/print.h>
 #include <swamp-typeinfo/typeinfo.h>
 
 void printTabs(FldOutStream* fp, int indentation)
@@ -79,7 +80,11 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
             const swamp_struct* p = swamp_value_struct(v);
             const SwtiRecordType* record = (const SwtiRecordType*) type;
             if (p->info.field_count != record->fieldCount) {
-                CLOG_SOFT_ERROR("problem with field count");
+                for (size_t i=0; i<record->fieldCount;++i) {
+                    CLOG_SOFT_ERROR("  field:%s", record->fields[i].name);
+                }
+                swamp_value_print(p, "unknown struct");
+                CLOG_ERROR("problem with field count %s %d", record->internal.name, p->info.field_count);
                 return -2;
             }
             printWithColorf(fp, 94, "{ ", fp);
