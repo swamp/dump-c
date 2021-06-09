@@ -10,6 +10,7 @@
 struct SwtiType;
 struct FldInStream;
 struct FldOutStream;
+struct swamp_allocator;
 
 int swampDumpToOctets(struct FldOutStream* stream, const swamp_value* v, const struct SwtiType* type);
 int swampDumpToOctetsRaw(struct FldOutStream* stream, const swamp_value* v, const struct SwtiType* type);
