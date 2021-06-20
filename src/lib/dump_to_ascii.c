@@ -181,6 +181,8 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
             const SwtiCustomType* custom = (const SwtiCustomType*) type;
             const swamp_enum* p = swamp_value_enum(v);
             const SwtiCustomTypeVariant* variant = &custom->variantTypes[p->enum_type];
+            printWithColorf(fp, 92, custom->internal.name);
+            printWithColorf(fp, 93, ":");
             printWithColorf(fp, 95, variant->name);
             for (size_t i = 0; i < variant->paramCount; ++i) {
                 printWithColorf(fp, 91, " ");
