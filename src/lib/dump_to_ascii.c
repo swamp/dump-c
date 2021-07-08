@@ -136,7 +136,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                     printNewLineWithTabs(fp, indentation);
                     printWithColorf(fp, 35, ", ");
                 }
-                int errorCode = swampDumpToAscii(p->fields[i], tuple->parameterTypes[i], flags, indentation + 1, fp);
+                int errorCode = swampDumpToAscii(p->fields[i], tuple->parameterTypes[i], flags | swampDumpFlagAliasOnce, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -170,11 +170,11 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
             return 0;
         case SwtiTypeAlias: {
             const SwtiAliasType* alias = (const SwtiAliasType*) type;
-            if (flags & swampDumpFlagAlias) {
+            if (flags & swampDumpFlagAlias || flags & swampDumpFlagAliasOnce) {
                 printWithColorf(fp, 92, alias->internal.name);
                 printWithColorf(fp, 91, " => ");
             }
-            int errorCode = swampDumpToAscii(v, alias->targetType, flags, indentation + 1, fp);
+            int errorCode = swampDumpToAscii(v, alias->targetType, flags & ~swampDumpFlagAliasOnce, indentation + 1, fp);
             if (errorCode != 0) {
                 return errorCode;
             }

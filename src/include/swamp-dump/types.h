@@ -10,5 +10,6 @@ const static int swampDumpFlagBlobExpanded = 0x02;
 const static int swampDumpFlagBlobAscii = 0x04;
 const static int swampDumpFlagBlobAutoFormat = 0x08;
 const static int swampDumpFlagCustomTypeVariantPrefix = 0x10;
+const static int swampDumpFlagAliasOnce = 0x20;
 
 #endif // SWAMP_DUMP_EXAMPLE_INCLUDE_SWAMP_DUMP_TYPES_H
