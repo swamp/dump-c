@@ -80,7 +80,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
             const swamp_struct* p = swamp_value_struct(v);
             const SwtiRecordType* record = (const SwtiRecordType*) type;
             if (p->info.field_count != record->fieldCount) {
-                for (size_t i=0; i<record->fieldCount;++i) {
+                for (size_t i = 0; i < record->fieldCount; ++i) {
                     CLOG_SOFT_ERROR("  field:%s", record->fields[i].name);
                 }
                 swamp_value_print(p, "unknown struct");
@@ -136,7 +136,8 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                     printNewLineWithTabs(fp, indentation);
                     printWithColorf(fp, 35, ", ");
                 }
-                int errorCode = swampDumpToAscii(p->fields[i], tuple->parameterTypes[i], flags | swampDumpFlagAliasOnce, indentation + 1, fp);
+                int errorCode = swampDumpToAscii(p->fields[i], tuple->parameterTypes[i], flags | swampDumpFlagAliasOnce,
+                                                 indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -174,7 +175,8 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                 printWithColorf(fp, 92, alias->internal.name);
                 printWithColorf(fp, 91, " => ");
             }
-            int errorCode = swampDumpToAscii(v, alias->targetType, flags & ~swampDumpFlagAliasOnce, indentation + 1, fp);
+            int errorCode = swampDumpToAscii(v, alias->targetType, flags & ~swampDumpFlagAliasOnce, indentation + 1,
+                                             fp);
             if (errorCode != 0) {
                 return errorCode;
             }
@@ -207,7 +209,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                 size_t count = blob->octet_count > 2048 ? 2048 : blob->octet_count;
                 if (flags & swampDumpFlagBlobAutoFormat) {
                     int allIsPrintable = 1;
-                    for (size_t i=0; i < count;++i) {
+                    for (size_t i = 0; i < count; ++i) {
                         uint8_t ch = blob->octets[i];
                         if (ch < 32 || ch > 126) {
                             allIsPrintable = 0;
@@ -219,21 +221,44 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                     }
                 }
                 if (flags & swampDumpFlagBlobAscii) {
-                    for (size_t i=0; i<count;++i) {
+                    for (size_t i = 0; i < count; ++i) {
                         if ((i % 64) == 0) {
-                            printNewLineWithDots(fp, indentation+1);
+                            printNewLineWithDots(fp, indentation + 1);
                         }
                         printWithColorf(fp, 37, "%c", blob->octets[i]);
                     }
                 } else {
-                    for (size_t i=0; i<count;++i) {
+                    for (size_t i = 0; i < count; ++i) {
                         if ((i % 32) == 0) {
-                            printNewLineWithDots(fp, indentation+1);
+                            printNewLineWithDots(fp, indentation + 1);
                         }
                         printWithColorf(fp, 12, "%02X ", blob->octets[i]);
                     }
                 }
             }
+            break;
+        }
+        case SwtiTypeChar: {
+            swamp_int32 ordinalValue = swamp_value_int(v);
+            printWithColorf(fp, 91, "'");
+            printWithColorf(fp, 33, "%c", (char) ordinalValue);
+            printWithColorf(fp, 91, "'");
+            break;
+        }
+        case SwtiTypeAny: {
+            printWithColorf(fp, 91, "ANY");
+            break;
+        }
+        case SwtiTypeAnyMatchingTypes: {
+            printWithColorf(fp, 91, "*");
+            break;
+        }
+        case SwtiTypeResourceName: {
+            printWithColorf(fp, 33, "@");
+            break;
+        }
+        default: {
+            CLOG_ERROR("unknown type %d", type->type);
         }
     }
 
