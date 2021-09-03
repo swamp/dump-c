@@ -12,10 +12,12 @@ struct FldInStream;
 struct FldOutStream;
 struct swamp_allocator;
 
+typedef swamp_unmanaged* (*unmanagedTypeCreator)(const struct SwtiType* type);
+
 int swampDumpToOctets(struct FldOutStream* stream, const swamp_value* v, const struct SwtiType* type);
 int swampDumpToOctetsRaw(struct FldOutStream* stream, const swamp_value* v, const struct SwtiType* type);
 int swampDumpFromOctets(struct FldInStream* inStream, struct swamp_allocator* allocator, const struct SwtiType* tiType,
-                        const swamp_value** out);
+                        unmanagedTypeCreator creator, const swamp_value** out);
 int swampDumpFromOctetsRaw(struct FldInStream* inStream, struct swamp_allocator* allocator,
-                           const struct SwtiType* tiType, const swamp_value** out);
+                           const struct SwtiType* tiType, unmanagedTypeCreator creator, const swamp_value** out);
 #endif

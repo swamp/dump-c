@@ -109,6 +109,11 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const swamp_value* v, const Sw
             }
             break;
         }
+        case SwtiTypeUnmanaged: {
+            const SwtiUnmanagedType* unmanaged = (const SwtiUnmanagedType*) type;
+            const swamp_unmanaged* unmanagedValue = swamp_value_unmanaged(v);
+            unmanagedValue->serialize(unmanagedValue->ptr, stream);
+        }
         default:
             CLOG_ERROR("Unknown type to serialize %d", type->type);
     }

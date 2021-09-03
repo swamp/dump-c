@@ -215,12 +215,14 @@ static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foun
         if (error < 0) {
             return error;
         }
-        if (ch != 10) {
-            name[charsFound++] = ch;
-        } else {
-            // fldInStreamExUnread(inStream);
+        if (ch == 10) {
             break;
-        }
+        } else if (ch == 13) {
+            // Windows support
+            continue;
+        } else {
+            name[charsFound++] = ch;
+        } 
     }
     name[charsFound] = 0;
     *foundString = name;
