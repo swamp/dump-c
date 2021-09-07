@@ -40,8 +40,6 @@ static void printWithColorf(FldOutStream* fp, int fg, const char* s, ...)
 {
     va_list pl;
 
-    fldOutStreamWritef(fp, "\033[%dm", fg);
-
     va_start(pl, s);
     fldOutStreamWritevf(fp, s, pl);
     va_end(pl);
@@ -53,7 +51,7 @@ static int typeIsSimple(const SwtiType* type)
     return (v == SwtiTypeBoolean) || (v == SwtiTypeInt) || (v == SwtiTypeFixed) || (v == SwtiTypeString);
 }
 
-int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int indentation, FldOutStream* fp)
+int swampDumpToAsciiNoColor(const swamp_value* v, const SwtiType* type, int flags, int indentation, FldOutStream* fp)
 {
     switch (type->type) {
         case SwtiTypeBoolean: {
@@ -98,7 +96,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                 }
                 printWithColorf(fp, 92, field->name);
                 printWithColorf(fp, 32, " = ");
-                int errorCode = swampDumpToAscii(p->fields[i], field->fieldType, flags, indentation + 1, fp);
+                int errorCode = swampDumpToAsciiNoColor(p->fields[i], field->fieldType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -115,7 +113,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                     printNewLineWithTabs(fp, indentation);
                     printWithColorf(fp, 35, ", ");
                 }
-                int errorCode = swampDumpToAscii(p->fields[i], array->itemType, flags, indentation + 1, fp);
+                int errorCode = swampDumpToAsciiNoColor(p->fields[i], array->itemType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -136,7 +134,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                     printNewLineWithTabs(fp, indentation);
                     printWithColorf(fp, 35, ", ");
                 }
-                int errorCode = swampDumpToAscii(p->fields[i], tuple->parameterTypes[i], flags | swampDumpFlagAliasOnce,
+                int errorCode = swampDumpToAsciiNoColor(p->fields[i], tuple->parameterTypes[i], flags | swampDumpFlagAliasOnce,
                                                  indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
@@ -155,7 +153,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                 printNewLineWithTabs(fp, indentation);
                 printWithColorf(fp, 35, ", ");
             }
-            int errorCode = swampDumpToAscii(value, array->itemType, flags, indentation + 1, fp);
+            int errorCode = swampDumpToAsciiNoColor(value, array->itemType, flags, indentation + 1, fp);
             if (errorCode != 0) {
                 return errorCode;
             }
@@ -175,7 +173,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
                 printWithColorf(fp, 92, alias->internal.name);
                 printWithColorf(fp, 91, " => ");
             }
-            int errorCode = swampDumpToAscii(v, alias->targetType, flags & ~swampDumpFlagAliasOnce, indentation + 1,
+            int errorCode = swampDumpToAsciiNoColor(v, alias->targetType, flags & ~swampDumpFlagAliasOnce, indentation + 1,
                                              fp);
             if (errorCode != 0) {
                 return errorCode;
@@ -194,7 +192,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
             for (size_t i = 0; i < variant->paramCount; ++i) {
                 printWithColorf(fp, 91, " ");
                 const SwtiType* paramType = variant->paramTypes[i];
-                int errorCode = swampDumpToAscii(p->fields[i], paramType, flags, indentation + 1, fp);
+                int errorCode = swampDumpToAsciiNoColor(p->fields[i], paramType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -265,7 +263,7 @@ int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int 
     return 0;
 }
 
-const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, int flags, char* target, size_t maxCount)
+const char* swampDumpToAsciiStringNoColor(const swamp_value* v, const SwtiType* type, int flags, char* target, size_t maxCount)
 {
     FldOutStream outStream;
 
@@ -275,9 +273,8 @@ const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, i
 
     fldOutStreamInit(&outStream, (uint8_t*) target, maxCount - 6); // reserve for zero
 
-    int errorCode = swampDumpToAscii(v, type, flags, 0, &outStream);
+    int errorCode = swampDumpToAsciiNoColor(v, type, flags, 0, &outStream);
     outStream.size = maxCount;
-    fldOutStreamWritef(&outStream, "\033[0m");
     fldOutStreamWriteUInt8(&outStream, 0);
     if (errorCode != 0) {
         return 0;

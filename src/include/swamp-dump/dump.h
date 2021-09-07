@@ -13,7 +13,7 @@ struct FldInStream;
 struct FldOutStream;
 struct swamp_allocator;
 
-typedef swamp_unmanaged* (*unmanagedTypeCreator)(void* context, const struct SwtiUnmanagedType* type);
+typedef const swamp_unmanaged* (*unmanagedTypeCreator)(void* context, const struct SwtiUnmanagedType* type);
 
 int swampDumpToOctets(struct FldOutStream* stream, const swamp_value* v, const struct SwtiType* type);
 int swampDumpToOctetsRaw(struct FldOutStream* stream, const swamp_value* v, const struct SwtiType* type);
