@@ -67,7 +67,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
         case SwtiTypeFixed: {
             SwampFixed32 value = *((const SwampFixed32 *)v);
 
-            printWithColorf(fp, 91, "%f", value / (float)SWAMP_FIXED_FACTOR);
+            printWithColorf(fp, 91, "%.3f", value / (float)SWAMP_FIXED_FACTOR);
         } break;
         case SwtiTypeString: {
             const SwampString* p = *((const SwampString**)v);
@@ -99,7 +99,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             printWithColorf(fp, 94, " }");
         } break;
         case SwtiTypeArray: {
-            const SwtiArrayType* arrayType = (const SwtiArrayType*) type;
+            const SwtiArrayType* arrayType = *((const SwtiArrayType**) type);
             const SwampArray* array = (const SwampArray*) v;
 
             const uint8_t* p = array->value;
