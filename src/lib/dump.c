@@ -7,49 +7,33 @@
 #include <swamp-dump/dump.h>
 #include <swamp-typeinfo/typeinfo.h>
 
-int swampDumpToOctetsHelper(FldOutStream* stream, const swamp_value* v, const SwtiType* type)
+int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const SwtiType* type)
 {
+    /*
     switch (type->type) {
         case SwtiTypeBoolean: {
-            swamp_bool truth = swamp_value_bool(v);
+            const SwampBool truth = ((SwampBool*)(v));
             fldOutStreamWriteUInt8(stream, truth);
         } break;
         case SwtiTypeInt: {
-            swamp_int32 value = swamp_value_int(v);
+            SwampInt32 value = (*(SwampInt32*)(v));
             fldOutStreamWriteInt32(stream, value);
         } break;
         case SwtiTypeFixed: {
-            swamp_fixed32 value = swamp_value_fixed(v);
+            SwampFixed32 value = *(SwampFixed32*)(v);
             fldOutStreamWriteInt32(stream, value);
         } break;
         case SwtiTypeString: {
-            const swamp_string* p = swamp_value_string(v);
+            const SwampString* p = 0; //swamp_value_string(v);
             size_t stringLength = tc_strlen(p->characters);
             fldOutStreamWriteUInt8(stream, stringLength);
             fldOutStreamWriteOctets(stream, (const uint8_t*) p->characters, stringLength);
         } break;
         case SwtiTypeRecord: {
-            const swamp_struct* p = swamp_value_struct(v);
             const SwtiRecordType* record = (const SwtiRecordType*) type;
-            if (p->info.field_count != record->fieldCount) {
-                CLOG_SOFT_ERROR("problem with field count");
-                return -2;
-            }
             for (size_t i = 0; i < record->fieldCount; i++) {
                 const SwtiRecordTypeField* field = &record->fields[i];
-                int errorCode = swampDumpToOctetsHelper(stream, p->fields[i], field->fieldType);
-                if (errorCode != 0) {
-                    return errorCode;
-                }
-            }
-        } break;
-        case SwtiTypeArray: {
-            const SwtiArrayType* array = (const SwtiArrayType*) type;
-            const swamp_struct* p = swamp_value_struct(v);
-            fldOutStreamWriteUInt8(stream, p->info.field_count);
-
-            for (size_t i = 0; i < p->info.field_count; i++) {
-                int errorCode = swampDumpToOctetsHelper(stream, p->fields[i], array->itemType);
+                int errorCode = swampDumpToOctetsHelper(stream, field->offset, field->fieldType);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -57,15 +41,28 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const swamp_value* v, const Sw
         } break;
         case SwtiTypeTuple: {
             const SwtiTupleType* tuple = (const SwtiTupleType *) type;
-            const swamp_struct* p = swamp_value_struct(v);
 
-            for (size_t i = 0; i < p->info.field_count; i++) {
-                int errorCode = swampDumpToOctetsHelper(stream, p->fields[i], tuple->parameterTypes[i]);
+            for (size_t i = 0; i < tuple->fieldCount; i++) {
+                const SwtiRecordTypeField* field = &tuple->fields[i];
+                int errorCode = swampDumpToOctetsHelper(stream, ((uint8_t*)v) + field->offset, tuple->fields[i].fieldType);
                 if (errorCode != 0) {
                     return errorCode;
                 }
             }
         } break;
+        case SwtiTypeArray: {
+            const SwtiArrayType* array = (const SwtiArrayType*) type;
+            const SwampArray * p = 0; // swamp_value_struct(v);
+            fldOutStreamWriteUInt8(stream, p->count);
+
+            for (size_t i = 0; i < p->count; i++) {
+                int errorCode = swampDumpToOctetsHelper(stream, ((uint8_t*)v) + p->itemSize * i, array->itemType);
+                if (errorCode != 0) {
+                    return errorCode;
+                }
+            }
+        } break;
+
         case SwtiTypeList: {
             const SwtiListType* list = (const SwtiListType*) type;
             const swamp_list* p = swamp_value_list(v);
@@ -118,6 +115,7 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const swamp_value* v, const Sw
             CLOG_ERROR("Unknown type to serialize %d", type->type);
     }
 
+    */
     return 0;
 }
 
@@ -134,14 +132,14 @@ static int writeVersion(FldOutStream* stream)
     return 0;
 }
 
-int swampDumpToOctets(FldOutStream* stream, const swamp_value* v, const SwtiType* type)
+int swampDumpToOctets(FldOutStream* stream, const void* v, const SwtiType* type)
 {
     writeVersion(stream);
 
     return swampDumpToOctetsHelper(stream, v, type);
 }
 
-int swampDumpToOctetsRaw(FldOutStream* stream, const swamp_value* v, const SwtiType* type)
+int swampDumpToOctetsRaw(FldOutStream* stream, const void* v, const SwtiType* type)
 {
     return swampDumpToOctetsHelper(stream, v, type);
 }

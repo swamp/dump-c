@@ -10,7 +10,7 @@
 struct FldOutStream;
 
 
-int swampDumpToAscii(const swamp_value* v, const SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
-const char* swampDumpToAsciiString(const swamp_value* v, const SwtiType* type, int flags, char* target, size_t maxCount);
+int swampDumpToAscii(const uint8_t* v, const SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
+const char* swampDumpToAsciiString(const uint8_t * v, const SwtiType* type, int flags, char* target, size_t maxCount);
 
 #endif

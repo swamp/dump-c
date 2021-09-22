@@ -8,16 +8,14 @@
 struct FldInStream;
 struct FldOutStream;
 struct SwtiType;
-struct swamp_value;
-struct swamp_allocator;
 struct SwtiType;
 
 #include <stddef.h>
 
-int swampDumpFromYaml(struct FldInStream* inStream, struct swamp_allocator* allocator, const struct SwtiType* tiType,
-    const struct swamp_value** out);
+int swampDumpFromYaml(struct FldInStream* inStream, const struct SwtiType* tiType,
+    const void** out);
 
-int swampDumpToYaml(const struct swamp_value* v, const struct SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
+int swampDumpToYaml(const void* v, const struct SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
 const char* swampDumpToYamlString(const struct swamp_value* v, const struct SwtiType* type, int flags, char* target, size_t maxCount);
 
 #endif // SWAMP_DUMP_DUMP_YAML_H

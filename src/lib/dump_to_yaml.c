@@ -52,8 +52,9 @@ static int typeIsSimple(const SwtiType* type)
     return (v == SwtiTypeBoolean) || (v == SwtiTypeInt) || (v == SwtiTypeFixed) || (v == SwtiTypeString) || (v == SwtiTypeCustom) || (v == SwtiTypeBlob);
 }
 
-int swampDumpToYaml(const swamp_value* v, const SwtiType* type, int flags, int indentation, int alreadyindent, FldOutStream* fp)
+int swampDumpToYaml(const void* v, const SwtiType* type, int flags, int indentation, int alreadyindent, FldOutStream* fp)
 {
+    /*
     switch (type->type) {
         case SwtiTypeBoolean: {
             swamp_bool value = swamp_value_bool(v);
@@ -209,11 +210,12 @@ int swampDumpToYaml(const swamp_value* v, const SwtiType* type, int flags, int i
             }
         }
     }
+     */
 
     return 0;
 }
 
-const char* swampDumpToYamlString(const swamp_value* v, const SwtiType* type, int flags, char* target, size_t maxCount)
+const char* swampDumpToYamlString(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount)
 {
     FldOutStream outStream;
 

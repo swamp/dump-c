@@ -51,8 +51,9 @@ static int typeIsSimple(const SwtiType* type)
     return (v == SwtiTypeBoolean) || (v == SwtiTypeInt) || (v == SwtiTypeFixed) || (v == SwtiTypeString);
 }
 
-int swampDumpToAsciiNoColor(const swamp_value* v, const SwtiType* type, int flags, int indentation, FldOutStream* fp)
+int swampDumpToAsciiNoColor(const void* v, const SwtiType* type, int flags, int indentation, FldOutStream* fp)
 {
+    /*
     switch (type->type) {
         case SwtiTypeBoolean: {
             swamp_bool value = swamp_value_bool(v);
@@ -259,11 +260,12 @@ int swampDumpToAsciiNoColor(const swamp_value* v, const SwtiType* type, int flag
             CLOG_ERROR("unknown type %d", type->type);
         }
     }
+     */
 
     return 0;
 }
 
-const char* swampDumpToAsciiStringNoColor(const swamp_value* v, const SwtiType* type, int flags, char* target, size_t maxCount)
+const char* swampDumpToAsciiStringNoColor(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount)
 {
     FldOutStream outStream;
 

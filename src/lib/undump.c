@@ -5,13 +5,13 @@
 #include <clog/clog.h>
 #include <flood/in_stream.h>
 #include <swamp-dump/dump.h>
-#include <swamp-runtime/allocator.h>
 #include <swamp-typeinfo/typeinfo.h>
 #include <tiny-libc/tiny_libc.h>
 
 int swampDumpFromOctetsHelper(FldInStream* inStream, struct swamp_allocator* allocator, const SwtiType* tiType,
-                              unmanagedTypeCreator creator, void* context, const swamp_value** out)
+                              unmanagedTypeCreator creator, void* context, const void** out)
 {
+    /*
     switch (tiType->type) {
         case SwtiTypeInt: {
             swamp_int32 v;
@@ -127,6 +127,7 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, struct swamp_allocator* all
             return -1;
             break;
     }
+    */
 
     return 0;
 }
@@ -148,7 +149,7 @@ static int readVersion(FldInStream* inStream)
 }
 
 int swampDumpFromOctets(FldInStream* inStream, struct swamp_allocator* allocator, const SwtiType* tiType,
-                        unmanagedTypeCreator creator, void* context, const swamp_value** out)
+                        unmanagedTypeCreator creator, void* context, const void** out)
 {
     int error;
     if ((error = readVersion(inStream)) < 0) {
@@ -159,7 +160,7 @@ int swampDumpFromOctets(FldInStream* inStream, struct swamp_allocator* allocator
 }
 
 int swampDumpFromOctetsRaw(FldInStream* inStream, struct swamp_allocator* allocator, const SwtiType* tiType,
-                           unmanagedTypeCreator creator, void* context, const swamp_value** out)
+                           unmanagedTypeCreator creator, void* context, const void** out)
 {
     return swampDumpFromOctetsHelper(inStream, allocator, tiType, creator, context, out);
 }

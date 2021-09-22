@@ -7,7 +7,6 @@
 #include <clog/clog.h>
 #include <flood/in_stream.h>
 #include <flood/text_in_stream.h>
-#include <swamp-runtime/allocator.h>
 #include <swamp-runtime/types.h>
 #include <swamp-typeinfo/typeinfo.h>
 
@@ -230,7 +229,7 @@ static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foun
     return charsFound;
 }
 
-int readBlob(FldTextInStream* inStream, int indentation, swamp_allocator* allocator, swamp_blob** out)
+int readBlob(FldTextInStream* inStream, int indentation, SwampBlob** out)
 {
     FldTextInStreamState save;
 
@@ -260,7 +259,7 @@ int readBlob(FldTextInStream* inStream, int indentation, swamp_allocator* alloca
         }
     }
 
-    *out = swamp_allocator_alloc_blob(allocator, buf, p - buf, 0);
+    *out = 0; //swamp_allocator_alloc_blob(allocator, buf, p - buf, 0);
 
     tc_free(buf);
 
@@ -364,8 +363,9 @@ int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredInd
 }
 
 int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct swamp_allocator* allocator,
-                            const SwtiType* tiType, const swamp_value** out)
+                            const SwtiType* tiType, const void** out)
 {
+    /*
     switch (tiType->type) {
         case SwtiTypeInt: {
             int32_t v;
@@ -523,11 +523,13 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             break;
     }
 
+     */
+
     return 0;
 }
 
-int swampDumpFromYaml(FldInStream* inStream, struct swamp_allocator* allocator, const SwtiType* tiType,
-                      const swamp_value** out)
+int swampDumpFromYaml(FldInStream* inStream, const SwtiType* tiType,
+                      const void** out)
 {
     FldTextInStream textStream;
     fldTextInStreamInit(&textStream, inStream);
@@ -544,5 +546,5 @@ int swampDumpFromYaml(FldInStream* inStream, struct swamp_allocator* allocator, 
         }
     }
 
-    return swampDumpFromYamlHelper(&textStream, 0, allocator, tiType, out);
+    return swampDumpFromYamlHelper(&textStream, 0, 0, tiType, out);
 }
