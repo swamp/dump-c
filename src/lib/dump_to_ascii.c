@@ -91,7 +91,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
                 }
                 printWithColorf(fp, 92, field->name);
                 printWithColorf(fp, 32, " = ");
-                int errorCode = swampDumpToAscii(v + field->memoryOffset, field->fieldType, flags, indentation + 1, fp);
+                int errorCode = swampDumpToAscii(v + field->memoryOffsetInfo.memoryOffset, field->fieldType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -148,7 +148,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
                     printNewLineWithTabs(fp, indentation);
                     printWithColorf(fp, 35, ", ");
                 }
-                int errorCode = swampDumpToAscii(v + field->memoryOffset, field->fieldType, flags | swampDumpFlagAliasOnce,
+                int errorCode = swampDumpToAscii(v + field->memoryOffsetInfo.memoryOffset, field->fieldType, flags | swampDumpFlagAliasOnce,
                                                  indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
@@ -160,9 +160,15 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
         case SwtiTypeFunction:
             CLOG_SOFT_ERROR("can not dump functions")
             return -1;
-        case SwtiTypeUnmanaged:
-            printWithColorf(fp, 94, "<@>");
+        case SwtiTypeUnmanaged: {
+            const SwampUnmanaged* unmanaged = *(const SwampUnmanaged**) v;
+            printWithColorf(fp, 94, "<");
+            size_t writtenCharacterCount = unmanaged->toString(unmanaged->ptr, 0, fp->p, fp->size - fp->pos - 8);
+            fp->pos += writtenCharacterCount;
+            fp->p += writtenCharacterCount;
+            printWithColorf(fp, 94, ">");
             return 0;
+        }
         case SwtiTypeAlias: {
             const SwtiAliasType* alias = (const SwtiAliasType*) type;
             if (flags & swampDumpFlagAlias || flags & swampDumpFlagAliasOnce) {
@@ -179,6 +185,9 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
         case SwtiTypeCustom: {
             const SwtiCustomType* custom = (const SwtiCustomType*) type;
             const uint8_t* p = (const uint8_t*)v;
+            if (*p >= custom->variantCount) {
+                CLOG_ERROR("illegal variant index %d", *p);
+            }
             const SwtiCustomTypeVariant* variant = &custom->variantTypes[*p];
             p++;
             if (flags & swampDumpFlagCustomTypeVariantPrefix) {
@@ -189,7 +198,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             for (size_t i = 0; i < variant->paramCount; ++i) {
                 printWithColorf(fp, 91, " ");
                 const SwtiCustomTypeVariantField* field = &variant->fields[i];
-                int errorCode = swampDumpToAscii(p + field->memoryOffset, field->fieldType, flags, indentation + 1, fp);
+                int errorCode = swampDumpToAscii(p + field->memoryOffsetInfo.memoryOffset, field->fieldType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -252,6 +261,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             printWithColorf(fp, 33, "@");
             break;
         }
+
         default: {
             CLOG_ERROR("unknown type %d", type->type);
         }
