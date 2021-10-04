@@ -8,6 +8,8 @@
 #include <flood/in_stream.h>
 #include <flood/text_in_stream.h>
 #include <swamp-runtime/types.h>
+#include <swamp-runtime/swamp_allocate.h>
+#include <swamp-runtime/dynamic_memory.h>
 #include <swamp-typeinfo/typeinfo.h>
 
 static int detectIndentation(FldTextInStream* inStream)
@@ -144,7 +146,7 @@ typedef enum Marker {
     MarkerAscii,
 } Marker;
 
-int skipWhitespaceAndBreakMarkerEndOfLine(FldTextInStream* inStream, int* marker)
+int skipWhitespaceAndBreakMarkerEndOfLine(FldTextInStream* inStream, Marker* marker)
 {
     int errorCode = skipLeadingSpaces(inStream);
     if (errorCode < 0) {
@@ -229,7 +231,7 @@ static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foun
     return charsFound;
 }
 
-int readBlob(FldTextInStream* inStream, int indentation, SwampBlob** out)
+int readBlob(FldTextInStream* inStream, int indentation, SwampDynamicMemory* dynamicMemory, const SwampBlob** out)
 {
     FldTextInStreamState save;
 
@@ -259,7 +261,7 @@ int readBlob(FldTextInStream* inStream, int indentation, SwampBlob** out)
         }
     }
 
-    *out = 0; //swamp_allocator_alloc_blob(allocator, buf, p - buf, 0);
+    *out = swampBlobAllocate(dynamicMemory, buf, p - buf);
 
     tc_free(buf);
 
@@ -348,7 +350,7 @@ int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredInd
         return charactersRead;
     }
 
-    uint8_t ch;
+    char ch;
     int error = fldTextInStreamReadCh(inStream, &ch);
     if (error < 0) {
         return error;
@@ -362,10 +364,9 @@ int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredInd
     return 0;
 }
 
-int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct swamp_allocator* allocator,
-                            const SwtiType* tiType, const void** out)
+static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  SwampDynamicMemory* dynamicMemory,
+                            const SwtiType* tiType, uint8_t* target, size_t expectedSize)
 {
-    /*
     switch (tiType->type) {
         case SwtiTypeInt: {
             int32_t v;
@@ -373,14 +374,14 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             if (errorCode < 0) {
                 return errorCode;
             }
-            *out = swamp_allocator_alloc_integer(allocator, v);
+            *(SwampInt32*)target = v;
         } break;
         case SwtiTypeBoolean: {
             int truth = readBoolean(inStream);
             if (truth < 0) {
                 return truth;
             }
-            *out = swamp_allocator_alloc_boolean(allocator, truth);
+            *(SwampBool*)target = truth;
         } break;
         case SwtiTypeString: {
             const char* characters;
@@ -388,12 +389,15 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             if (errorCode < 0) {
                 return errorCode;
             }
-            *out = swamp_allocator_alloc_string(allocator, (const char*) characters);
+            *(const SwampString**)target = swampStringAllocate(dynamicMemory, (const char*) characters);
             break;
         }
         case SwtiTypeRecord: {
             const SwtiRecordType* record = (const SwtiRecordType*) tiType;
-            swamp_struct* temp = (swamp_struct*) swamp_allocator_alloc_struct(allocator, record->fieldCount);
+            if (record->memoryInfo.memorySize != expectedSize) {
+                CLOG_ERROR("wrong allocation in record");
+            }
+            //uint8_t* temp = swampDynamicMemoryAlloc(self, 1, record->memoryInfo.memorySize);
             for (size_t i = 0; i < record->fieldCount; ++i) {
                 const SwtiRecordTypeField* field = &record->fields[i];
                 const char* foundName;
@@ -419,24 +423,23 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
                     }
                     subIndentation++;
                 }
-                int resultCode = swampDumpFromYamlHelper(inStream, subIndentation, allocator, field->fieldType,
-                                                         &temp->fields[i]);
+                int resultCode = swampDumpFromYamlHelper(inStream, subIndentation, dynamicMemory, field->fieldType,
+                                                         target + field->memoryOffsetInfo.memoryOffset, field->memoryOffsetInfo.memoryInfo.memorySize);
                 if (resultCode < 0) {
                     CLOG_SOFT_ERROR("couldn't read value for field %s' (%d)", field->name, resultCode);
                     return resultCode;
                 }
             }
-            *out = (const swamp_value*) temp;
+
             break;
         }
         case SwtiTypeArray: {
             const SwtiArrayType* array = (const SwtiArrayType*) tiType;
-            uint8_t arrayLength;
-            swamp_struct* temp = (swamp_struct*) swamp_allocator_alloc_struct(allocator, arrayLength);
-            for (size_t i = 0; i < arrayLength; ++i) {
-                swampDumpFromYamlHelper(inStream, indentation, allocator, array->itemType, &temp->fields[i]);
+            if (expectedSize != 8) {
+                CLOG_ERROR("needs space to story array pointer");
             }
-            *out = (const swamp_value*) temp;
+
+            *(SwampArray**) target = 0;
             break;
         }
         case SwtiTypeList: {
@@ -444,7 +447,7 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             uint8_t listLength = 0;
             const int maxListLength = 256;
 
-            const swamp_value** targetValues = tc_malloc_type_count(swamp_value*, maxListLength);
+            uint8_t* tempBuffer = tc_malloc(list->memoryInfo.memorySize * maxListLength);
             while (1) {
                 int didContinue = checkListContinuation(inStream, indentation);
                 if (didContinue < 0) {
@@ -453,8 +456,8 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
                 if (!didContinue) {
                     break;
                 }
-                int errorCode = swampDumpFromYamlHelper(inStream, indentation + 1, allocator, list->itemType,
-                                                        &targetValues[listLength]);
+                int errorCode = swampDumpFromYamlHelper(inStream, indentation + 1, dynamicMemory, list->itemType,
+                                                       target + listLength * list->memoryInfo.memorySize, list->memoryInfo.memorySize);
                 if (errorCode < 0) {
                     CLOG_SOFT_ERROR("couldn't read list item %d", listLength);
                     return errorCode;
@@ -462,9 +465,10 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
                 listLength++;
             }
 
-            swamp_struct* temp = swamp_allocator_alloc_list_create(allocator, targetValues, listLength);
-            tc_free(targetValues);
-            *out = (const swamp_value*) temp;
+            const SwampArray* newArray = swampListAllocate(dynamicMemory, tempBuffer, listLength, list->memoryInfo.memorySize,
+                                                   list->memoryInfo.memoryAlign);
+            tc_free(tempBuffer);
+            *(const SwampArray**)target = newArray;
             break;
         }
         case SwtiTypeCustom: {
@@ -488,17 +492,19 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             }
 
             const SwtiCustomTypeVariant* variant = &custom->variantTypes[enumIndex];
-            swamp_enum* newEnum = (swamp_enum*) swamp_allocator_alloc_enum(allocator, enumIndex, variant->paramCount);
+            *target = (uint8_t) enumIndex;
             for (size_t i = 0; i < variant->paramCount; ++i) {
-                const SwtiType* paramType = variant->paramTypes[i];
-                swampDumpFromYamlHelper(inStream, indentation, allocator, paramType, &newEnum->fields[i]);
+                const SwtiType* paramType = variant->fields[i].fieldType;
+                SwtiMemoryOffsetInfo offsetInfo = variant->fields[i].memoryOffsetInfo;
+                swampDumpFromYamlHelper(inStream, indentation, dynamicMemory, paramType,
+                                        target + offsetInfo.memoryOffset, offsetInfo.memoryInfo.memorySize);
             }
-            *out = (const swamp_value*) newEnum;
-            break;
+
+             break;
         }
         case SwtiTypeAlias: {
             const SwtiAliasType* alias = (const SwtiAliasType*) tiType;
-            return swampDumpFromYamlHelper(inStream, indentation, allocator, alias->targetType, out);
+            return swampDumpFromYamlHelper(inStream, indentation, dynamicMemory, alias->targetType, target, expectedSize);
         }
         case SwtiTypeFunction: {
             CLOG_SOFT_ERROR("functions can not be serialized");
@@ -509,12 +515,12 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             return -1;
         }
         case SwtiTypeBlob: {
-            const swamp_blob* blob;
-            int errorCode = readBlob(inStream, indentation, allocator, &blob);
+            const SwampBlob* blob;
+            int errorCode = readBlob(inStream, indentation, dynamicMemory, &blob);
             if (errorCode < 0) {
                 return errorCode;
             }
-            *out = blob;
+            *(const SwampBlob**)target = blob;
             break;
         }
         default:
@@ -523,13 +529,11 @@ int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, struct s
             break;
     }
 
-     */
-
     return 0;
 }
 
 int swampDumpFromYaml(FldInStream* inStream, const SwtiType* tiType,
-                      const void** out)
+                      SwampDynamicMemory* dynamicMemory, void* target)
 {
     FldTextInStream textStream;
     fldTextInStreamInit(&textStream, inStream);
@@ -546,5 +550,5 @@ int swampDumpFromYaml(FldInStream* inStream, const SwtiType* tiType,
         }
     }
 
-    return swampDumpFromYamlHelper(&textStream, 0, 0, tiType, out);
+    return swampDumpFromYamlHelper(&textStream, 0, dynamicMemory, tiType, target, swtiGetMemorySize(tiType));
 }

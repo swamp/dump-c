@@ -9,13 +9,14 @@ struct FldInStream;
 struct FldOutStream;
 struct SwtiType;
 struct SwtiType;
+struct SwampDynamicMemory;
 
 #include <stddef.h>
 
 int swampDumpFromYaml(struct FldInStream* inStream, const struct SwtiType* tiType,
-    const void** out);
+    struct SwampDynamicMemory* memory, void* target);
 
 int swampDumpToYaml(const void* v, const struct SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
-const char* swampDumpToYamlString(const struct swamp_value* v, const struct SwtiType* type, int flags, char* target, size_t maxCount);
+const char* swampDumpToYamlString(const void* v, const struct SwtiType* type, int flags, char* target, size_t maxCount);
 
 #endif // SWAMP_DUMP_DUMP_YAML_H

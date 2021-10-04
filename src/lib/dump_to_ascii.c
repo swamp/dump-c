@@ -99,8 +99,8 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             printWithColorf(fp, 94, " }");
         } break;
         case SwtiTypeArray: {
-            const SwtiArrayType* arrayType = *((const SwtiArrayType**) type);
-            const SwampArray* array = (const SwampArray*) v;
+            const SwtiArrayType* arrayType = ((const SwtiArrayType*) type);
+            const SwampArray* array = *(const SwampArray**) v;
 
             const uint8_t* p = array->value;
             printWithColorf(fp, 94, "[| ", fp);
@@ -206,7 +206,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             break;
         }
         case SwtiTypeBlob: {
-            const SwampBlob * blob = (const SwampBlob*)v;
+            const SwampBlob* blob = *((const SwampBlob**) v);
             printWithColorf(fp, 91, "blob %d", blob->octetCount);
 
             if (flags & swampDumpFlagBlobExpanded) {
