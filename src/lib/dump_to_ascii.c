@@ -189,7 +189,6 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
                 CLOG_ERROR("illegal variant index %d", *p);
             }
             const SwtiCustomTypeVariant* variant = &custom->variantTypes[*p];
-            p++;
             if (flags & swampDumpFlagCustomTypeVariantPrefix) {
                 printWithColorf(fp, 91, custom->internal.name);
                 printWithColorf(fp, 93, ":");
