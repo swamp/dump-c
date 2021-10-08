@@ -17,8 +17,8 @@ typedef const void* (*unmanagedTypeCreator)(void* context, const struct SwtiUnma
 
 int swampDumpToOctets(struct FldOutStream* stream, const void* v, const struct SwtiType* type);
 int swampDumpToOctetsRaw(struct FldOutStream* stream, const void* v, const struct SwtiType* type);
-int swampDumpFromOctets(struct FldInStream* inStream, struct swamp_allocator* allocator, const struct SwtiType* tiType,
-                        unmanagedTypeCreator creator, void* context, const void** out);
-int swampDumpFromOctetsRaw(struct FldInStream* inStream, struct swamp_allocator* allocator,
-                           const struct SwtiType* tiType, unmanagedTypeCreator creator, void* context, const void** out);
+int swampDumpFromOctets(struct FldInStream* inStream, const struct SwtiType* tiType, unmanagedTypeCreator creator,
+                        void* context, const void** out);
+int swampDumpFromOctetsRaw(struct FldInStream* inStream, const struct SwtiType* tiType, unmanagedTypeCreator creator,
+                           void* context, const void** out);
 #endif

@@ -8,7 +8,7 @@
 #include <swamp-typeinfo/typeinfo.h>
 #include <tiny-libc/tiny_libc.h>
 
-int swampDumpFromOctetsHelper(FldInStream* inStream, struct swamp_allocator* allocator, const SwtiType* tiType,
+int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
                               unmanagedTypeCreator creator, void* context, const void** out)
 {
     /*
@@ -148,7 +148,7 @@ static int readVersion(FldInStream* inStream)
     return 0;
 }
 
-int swampDumpFromOctets(FldInStream* inStream, struct swamp_allocator* allocator, const SwtiType* tiType,
+int swampDumpFromOctets(FldInStream* inStream, const SwtiType* tiType,
                         unmanagedTypeCreator creator, void* context, const void** out)
 {
     int error;
@@ -156,11 +156,11 @@ int swampDumpFromOctets(FldInStream* inStream, struct swamp_allocator* allocator
         return error;
     }
 
-    return swampDumpFromOctetsHelper(inStream, allocator, tiType, creator, context, out);
+    return swampDumpFromOctetsHelper(inStream, tiType, creator, context, out);
 }
 
-int swampDumpFromOctetsRaw(FldInStream* inStream, struct swamp_allocator* allocator, const SwtiType* tiType,
+int swampDumpFromOctetsRaw(FldInStream* inStream, const SwtiType* tiType,
                            unmanagedTypeCreator creator, void* context, const void** out)
 {
-    return swampDumpFromOctetsHelper(inStream, allocator, tiType, creator, context, out);
+    return swampDumpFromOctetsHelper(inStream, tiType, creator, context, out);
 }
