@@ -163,9 +163,11 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
         case SwtiTypeUnmanaged: {
             const SwampUnmanaged* unmanaged = *(const SwampUnmanaged**) v;
             printWithColorf(fp, 94, "<");
-            size_t writtenCharacterCount = unmanaged->toString(unmanaged->ptr, 0, fp->p, fp->size - fp->pos - 8);
-            fp->pos += writtenCharacterCount;
-            fp->p += writtenCharacterCount;
+            if (unmanaged->toString) {
+                size_t writtenCharacterCount = unmanaged->toString(unmanaged->ptr, 0, fp->p, fp->size - fp->pos - 8);
+                fp->pos += writtenCharacterCount;
+                fp->p += writtenCharacterCount;
+            }
             printWithColorf(fp, 94, ">");
             return 0;
         }
