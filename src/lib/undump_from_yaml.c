@@ -7,9 +7,9 @@
 #include <clog/clog.h>
 #include <flood/in_stream.h>
 #include <flood/text_in_stream.h>
-#include <swamp-runtime/types.h>
-#include <swamp-runtime/swamp_allocate.h>
 #include <swamp-runtime/dynamic_memory.h>
+#include <swamp-runtime/swamp_allocate.h>
+#include <swamp-runtime/types.h>
 #include <swamp-typeinfo/typeinfo.h>
 
 static int detectIndentation(FldTextInStream* inStream)
@@ -52,7 +52,8 @@ int requireIndentation(FldTextInStream* inStream, int requiredIndentation)
     }
 
     if (indentation != requiredIndentation) {
-        CLOG_SOFT_ERROR("%s:unexpected indentation.  required %d but encountered %d", fldTextInStreamPositionString(inStream), requiredIndentation, indentation)
+        CLOG_SOFT_ERROR("%s:unexpected indentation.  required %d but encountered %d",
+                        fldTextInStreamPositionString(inStream), requiredIndentation, indentation)
         return -4;
     }
 
@@ -139,7 +140,6 @@ int skipWhitespaceAndEndOfLine(FldTextInStream* inStream)
     return 0;
 }
 
-
 typedef enum Marker {
     MarkerNone,
     MarkerHex,
@@ -223,7 +223,7 @@ static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foun
             continue;
         } else {
             name[charsFound++] = ch;
-        } 
+        }
     }
     name[charsFound] = 0;
     *foundString = name;
@@ -364,8 +364,8 @@ int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredInd
     return 0;
 }
 
-static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  SwampDynamicMemory* dynamicMemory,
-                            const SwtiType* tiType, uint8_t* target, size_t expectedSize)
+static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, SwampDynamicMemory* dynamicMemory,
+                                   const SwtiType* tiType, uint8_t* target, size_t expectedSize)
 {
     switch (tiType->type) {
         case SwtiTypeInt: {
@@ -374,14 +374,14 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
             if (errorCode < 0) {
                 return errorCode;
             }
-            *(SwampInt32*)target = v;
+            *(SwampInt32*) target = v;
         } break;
         case SwtiTypeBoolean: {
             int truth = readBoolean(inStream);
             if (truth < 0) {
                 return truth;
             }
-            *(SwampBool*)target = truth;
+            *(SwampBool*) target = truth;
         } break;
         case SwtiTypeString: {
             const char* characters;
@@ -389,7 +389,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
             if (errorCode < 0) {
                 return errorCode;
             }
-            *(const SwampString**)target = swampStringAllocate(dynamicMemory, (const char*) characters);
+            *(const SwampString**) target = swampStringAllocate(dynamicMemory, (const char*) characters);
             break;
         }
         case SwtiTypeRecord: {
@@ -397,7 +397,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
             if (record->memoryInfo.memorySize != expectedSize) {
                 CLOG_ERROR("wrong allocation in record");
             }
-            //uint8_t* temp = swampDynamicMemoryAlloc(self, 1, record->memoryInfo.memorySize);
+            // uint8_t* temp = swampDynamicMemoryAlloc(self, 1, record->memoryInfo.memorySize);
             for (size_t i = 0; i < record->fieldCount; ++i) {
                 const SwtiRecordTypeField* field = &record->fields[i];
                 const char* foundName;
@@ -424,7 +424,8 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
                     subIndentation++;
                 }
                 int resultCode = swampDumpFromYamlHelper(inStream, subIndentation, dynamicMemory, field->fieldType,
-                                                         target + field->memoryOffsetInfo.memoryOffset, field->memoryOffsetInfo.memoryInfo.memorySize);
+                                                         target + field->memoryOffsetInfo.memoryOffset,
+                                                         field->memoryOffsetInfo.memoryInfo.memorySize);
                 if (resultCode < 0) {
                     CLOG_SOFT_ERROR("couldn't read value for field %s' (%d)", field->name, resultCode);
                     return resultCode;
@@ -439,7 +440,32 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
                 CLOG_ERROR("needs space to story array pointer");
             }
 
-            *(SwampArray**) target = 0;
+            uint8_t listLength = 0;
+            const int maxListLength = 256;
+
+            uint8_t* tempBuffer = tc_malloc(array->memoryInfo.memorySize * maxListLength);
+            while (1) {
+                int didContinue = checkListContinuation(inStream, indentation);
+                if (didContinue < 0) {
+                    return didContinue;
+                }
+                if (!didContinue) {
+                    break;
+                }
+                int errorCode = swampDumpFromYamlHelper(inStream, indentation + 1, dynamicMemory, array->itemType,
+                                                        tempBuffer + listLength * array->memoryInfo.memorySize,
+                                                        array->memoryInfo.memorySize);
+                if (errorCode < 0) {
+                    CLOG_SOFT_ERROR("couldn't read list item %d", listLength);
+                    return errorCode;
+                }
+                listLength++;
+            }
+
+            const SwampArray* newArray = swampArrayAllocate(
+                dynamicMemory, tempBuffer, listLength, array->memoryInfo.memorySize, array->memoryInfo.memoryAlign);
+            tc_free(tempBuffer);
+            *(const SwampArray**) target = newArray;
             break;
         }
         case SwtiTypeList: {
@@ -457,7 +483,8 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
                     break;
                 }
                 int errorCode = swampDumpFromYamlHelper(inStream, indentation + 1, dynamicMemory, list->itemType,
-                                                       target + listLength * list->memoryInfo.memorySize, list->memoryInfo.memorySize);
+                                                        tempBuffer + listLength * list->memoryInfo.memorySize,
+                                                        list->memoryInfo.memorySize);
                 if (errorCode < 0) {
                     CLOG_SOFT_ERROR("couldn't read list item %d", listLength);
                     return errorCode;
@@ -465,10 +492,10 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
                 listLength++;
             }
 
-            const SwampArray* newArray = swampListAllocate(dynamicMemory, tempBuffer, listLength, list->memoryInfo.memorySize,
-                                                   list->memoryInfo.memoryAlign);
+            const SwampList* newList = swampListAllocate(dynamicMemory, tempBuffer, listLength,
+                                                         list->memoryInfo.memorySize, list->memoryInfo.memoryAlign);
             tc_free(tempBuffer);
-            *(const SwampArray**)target = newArray;
+            *(const SwampList**) target = newList;
             break;
         }
         case SwtiTypeCustom: {
@@ -500,11 +527,12 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
                                         target + offsetInfo.memoryOffset, offsetInfo.memoryInfo.memorySize);
             }
 
-             break;
+            break;
         }
         case SwtiTypeAlias: {
             const SwtiAliasType* alias = (const SwtiAliasType*) tiType;
-            return swampDumpFromYamlHelper(inStream, indentation, dynamicMemory, alias->targetType, target, expectedSize);
+            return swampDumpFromYamlHelper(inStream, indentation, dynamicMemory, alias->targetType, target,
+                                           expectedSize);
         }
         case SwtiTypeFunction: {
             CLOG_SOFT_ERROR("functions can not be serialized");
@@ -520,7 +548,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
             if (errorCode < 0) {
                 return errorCode;
             }
-            *(const SwampBlob**)target = blob;
+            *(const SwampBlob**) target = blob;
             break;
         }
         default:
@@ -532,8 +560,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation,  
     return 0;
 }
 
-int swampDumpFromYaml(FldInStream* inStream, const SwtiType* tiType,
-                      SwampDynamicMemory* dynamicMemory, void* target)
+int swampDumpFromYaml(FldInStream* inStream, const SwtiType* tiType, SwampDynamicMemory* dynamicMemory, void* target)
 {
     FldTextInStream textStream;
     fldTextInStreamInit(&textStream, inStream);
