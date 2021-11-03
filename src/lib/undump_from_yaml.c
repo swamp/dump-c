@@ -65,6 +65,16 @@ int isAlpha(char c)
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
+int isNumber(char c)
+{
+    return (c >= '0' && c <= '9');
+}
+
+int isAlphaNum(char c)
+{
+    return isAlpha(c) || isNumber(c);
+}
+
 int skipLeadingSpaces(FldTextInStream* inStream)
 {
     char ch;
@@ -97,7 +107,7 @@ int readVariableIdentifier(FldTextInStream* inStream, const char** fieldName)
         if (error < 0) {
             return error;
         }
-        if (isAlpha(ch)) {
+        if ((charsFound == 0 && isAlpha(ch)) || isAlphaNum(ch)) {
             name[charsFound++] = ch;
         } else {
             fldTextInStreamUnreadCh(inStream);
@@ -357,7 +367,7 @@ int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredInd
     }
 
     if (ch != ':') {
-        CLOG_SOFT_ERROR("expected colon");
+        CLOG_SOFT_ERROR("expected colon after %s", *fieldName);
         return -6;
     }
 
@@ -442,7 +452,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
 
             uint8_t listLength = 0;
             const int maxListLength = 256;
-
+            indentation ++;
             uint8_t* tempBuffer = tc_malloc(array->memoryInfo.memorySize * maxListLength);
             while (1) {
                 int didContinue = checkListContinuation(inStream, indentation);
@@ -461,7 +471,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
                 }
                 listLength++;
             }
-
+            indentation --;
             const SwampArray* newArray = swampArrayAllocate(
                 dynamicMemory, tempBuffer, listLength, array->memoryInfo.memorySize, array->memoryInfo.memoryAlign);
             tc_free(tempBuffer);
