@@ -71,7 +71,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
         } break;
         case SwtiTypeString: {
             const SwampString* p = *((const SwampString**)v);
-            if (p->characterCount > 17*1024) {
+            if (p->characterCount > 32*1024) {
                 CLOG_ERROR("can not have these long strings")
             }
             printWithColorf(fp, 91, "\"");
