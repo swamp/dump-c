@@ -5,7 +5,6 @@
 #include <clog/clog.h>
 #include <flood/out_stream.h>
 #include <stdarg.h>
-#include <swamp-dump/dump.h>
 #include <swamp-dump/types.h>
 #include <swamp-typeinfo/typeinfo.h>
 
