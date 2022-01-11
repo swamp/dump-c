@@ -29,6 +29,11 @@ target_include_directories(swamp_dump PUBLIC ${deps}typeinfo-c/src/include)
 target_include_directories(swamp_dump PRIVATE ${deps}tiny-libc/src/include)
 target_include_directories(swamp_dump PUBLIC ${deps}flood-c/src/include)
 target_include_directories(swamp_dump PRIVATE ${deps}clog/src/include)
+target_include_directories(swamp_dump PRIVATE ${deps}monotonic-time-c/src/include)
 target_include_directories(swamp_dump PUBLIC ../include)
+
+
+target_include_directories(swamp_dump PRIVATE ${deps}tinge-c/src/include)
+target_include_directories(swamp_dump PRIVATE ${deps}raff-c/src/include)
 
 target_link_libraries(swamp_dump m)
