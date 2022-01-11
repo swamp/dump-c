@@ -17,3 +17,4 @@ local_packages/
 
 turmoil*.tar*
 
+.cmake/
