@@ -123,7 +123,6 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             const SwtiListType* listType = (const SwtiListType*) type;
 
             printWithColorf(fp, 94, "[ ", fp);
-            int i = 0;
             const uint8_t* itemPointer = list->value;
             for (size_t i=0; i<list->count; ++i) {
                 if (i > 0) {
@@ -162,7 +161,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             return -1;
         case SwtiTypeUnmanaged: {
             const SwampUnmanaged* unmanaged = *(const SwampUnmanaged**) v;
-            printWithColorf(fp, 94, "<");
+            printWithColorf(fp, 94, "< (%p) ", (void*)unmanaged);
             if (unmanaged->toString) {
                 size_t writtenCharacterCount = unmanaged->toString(unmanaged->ptr, 0, fp->p, fp->size - fp->pos - 8);
                 fp->pos += writtenCharacterCount;
