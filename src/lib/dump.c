@@ -54,7 +54,7 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const SwtiType*
             fldOutStreamWriteUInt8(stream, array->count);
             size_t itemOffset = 0;
             for (size_t i = 0; i < array->count; i++) {
-                int errorCode = swampDumpToOctetsHelper(stream, ((uint8_t*)v) + itemOffset, arrayType->itemType);
+                int errorCode = swampDumpToOctetsHelper(stream, (uint8_t*)array->value + itemOffset, arrayType->itemType);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -82,6 +82,9 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const SwtiType*
         case SwtiTypeBlob: {
             const SwampBlob* blob = *(const SwampBlob**) v;
             fldOutStreamWriteUInt32(stream, blob->octetCount);
+            if (blob->octetCount > 32 * 1024) {
+                CLOG_ERROR("swampDumpToOctets: blob size is too large");
+            }
             fldOutStreamWriteOctets(stream, blob->octets, blob->octetCount);
         } break;
         case SwtiTypeAlias: {

@@ -6,7 +6,8 @@
 #define SWAMP_DUMP_DUMP_UNMANAGED_H
 
 struct SwtiUnmanagedType;
+struct SwampUnmanaged;
 
-typedef const void* (*unmanagedTypeCreator)(void* context, const struct SwtiUnmanagedType* type);
+typedef const void* (*unmanagedTypeCreator)(void* context, const struct SwtiUnmanagedType* type, struct SwampUnmanaged* target);
 
 #endif

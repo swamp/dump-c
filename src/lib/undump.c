@@ -15,9 +15,7 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
 {
    switch (tiType->type) {
        case SwtiTypeInt: {
-           tc_memcpy_octets(target, inStream->p, sizeof(SwampInt32));
-           inStream->p += sizeof(SwampInt32);
-           inStream->pos += sizeof(SwampInt32);
+           fldInStreamReadInt32(inStream, (SwampInt32*) target);
        } break;
 
        case SwtiTypeBoolean: {
@@ -32,6 +30,8 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
 
            const SwampString* newString = swampStringAllocateWithSize(memory, (const char*)inStream->p, stringLengthIncludingTerminator-1);
            *(const SwampString**)target = newString;
+           inStream->p += stringLengthIncludingTerminator;
+           inStream->pos += stringLengthIncludingTerminator;
            break;
        }
 
@@ -118,7 +118,8 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
                CLOG_ERROR("tried to deserialize unmanaged '%s', but no creator was provided", unmanagedType->internal.name);
                return -2;
            }
-           const SwampUnmanaged* unmanagedValue = creator(context, unmanagedType);
+           SwampUnmanaged* unmanagedValue = swampUnmanagedAllocate(memory);
+           creator(context, unmanagedType, unmanagedValue);
            int errorCode = unmanagedValue->deSerialize(unmanagedValue->ptr, inStream->p, inStream->size - inStream->pos);
            if (errorCode < 0) {
                CLOG_SOFT_ERROR("could not deserialize unmanaged type %s %d", unmanagedType->internal.name, errorCode);
