@@ -175,8 +175,8 @@ int skipWhitespaceAndBreakMarkerEndOfLine(FldTextInStream* inStream, Marker* mar
     } else if (ch == '>') {
         char ch2;
 
-        int error = fldTextInStreamReadCh(inStream, &ch2);
-        if (error < 0) {
+        int endError = fldTextInStreamReadCh(inStream, &ch2);
+        if (endError < 0) {
             return error;
         }
         if (ch2 == 'x') {
