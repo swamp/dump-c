@@ -7,7 +7,7 @@
 #include <swamp-dump/dump.h>
 #include <swamp-typeinfo/typeinfo.h>
 
-int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const SwtiType* type)
+static int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const SwtiType* type)
 {
     switch (type->type) {
         case SwtiTypeBoolean: {
@@ -76,14 +76,14 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const SwtiType*
             }
         } break;
         case SwtiTypeFunction: {
-            CLOG_SOFT_ERROR("function can not be serialized to a dump format");
+            CLOG_SOFT_ERROR("function can not be serialized to a dump format")
             return -1;
         } break;
         case SwtiTypeBlob: {
             const SwampBlob* blob = *(const SwampBlob**) v;
             fldOutStreamWriteUInt32(stream, blob->octetCount);
             if (blob->octetCount > 32 * 1024) {
-                CLOG_ERROR("swampDumpToOctets: blob size is too large");
+                CLOG_ERROR("swampDumpToOctets: blob size is too large")
             }
             fldOutStreamWriteOctets(stream, blob->octets, blob->octetCount);
         } break;
@@ -117,7 +117,7 @@ int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const SwtiType*
             stream->pos += serializeErr;
         } break;
         default:
-            CLOG_ERROR("Unknown type to serialize %d", type->type);
+            CLOG_ERROR("Unknown type to serialize %d", type->type)
     }
 
     return 0;

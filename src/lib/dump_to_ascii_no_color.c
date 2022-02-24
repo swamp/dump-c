@@ -50,7 +50,7 @@ static int typeIsSimple(const SwtiType* type)
     return (v == SwtiTypeBoolean) || (v == SwtiTypeInt) || (v == SwtiTypeFixed) || (v == SwtiTypeString);
 }
 
-int swampDumpToAsciiNoColor(const void* v, const SwtiType* type, int flags, int indentation, FldOutStream* fp)
+static int swampDumpToAsciiNoColor(const void* v, const SwtiType* type, int flags, int indentation, FldOutStream* fp)
 {
     /*
     switch (type->type) {
@@ -264,7 +264,7 @@ int swampDumpToAsciiNoColor(const void* v, const SwtiType* type, int flags, int 
     return 0;
 }
 
-const char* swampDumpToAsciiStringNoColor(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount)
+static const char* swampDumpToAsciiStringNoColor(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount)
 {
     FldOutStream outStream;
 

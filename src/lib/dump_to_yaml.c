@@ -28,7 +28,7 @@ static void printDots(FldOutStream* fp, int indentation)
     }
 }
 
-void printNewLineWithDots(FldOutStream* fp, int indentation)
+static void printNewLineWithDots(FldOutStream* fp, int indentation)
 {
     fldOutStreamWriteUInt8(fp, '\n');
     printDots(fp, indentation);
@@ -51,7 +51,7 @@ static int typeIsSimple(const SwtiType* type)
     return (v == SwtiTypeBoolean) || (v == SwtiTypeInt) || (v == SwtiTypeFixed) || (v == SwtiTypeString) || (v == SwtiTypeCustom) || (v == SwtiTypeBlob);
 }
 
-int swampDumpToYaml(const void* v, const SwtiType* type, int flags, int indentation, int alreadyindent, FldOutStream* fp)
+static int swampDumpToYaml(const void* v, const SwtiType* type, int flags, int indentation, int alreadyindent, FldOutStream* fp)
 {
     /*
     switch (type->type) {
@@ -214,7 +214,7 @@ int swampDumpToYaml(const void* v, const SwtiType* type, int flags, int indentat
     return 0;
 }
 
-const char* swampDumpToYamlString(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount)
+static const char* swampDumpToYamlString(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount)
 {
     FldOutStream outStream;
 

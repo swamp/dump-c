@@ -10,7 +10,7 @@
 #include <swamp-runtime/dynamic_memory.h>
 #include <swamp-runtime/swamp_allocate.h>
 
-int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
+static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
                              unmanagedTypeCreator creator, void* context, void* target, SwampDynamicMemory* memory)
 {
    switch (tiType->type) {
@@ -97,7 +97,7 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
            return swampDumpFromOctetsHelper(inStream, alias->targetType, creator, context, target, memory);
        }
        case SwtiTypeFunction: {
-           CLOG_SOFT_ERROR("functions can not be serialized");
+           CLOG_SOFT_ERROR("functions can not be serialized")
            return -1;
        }
        case SwtiTypeBlob: {
@@ -115,14 +115,14 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
        case SwtiTypeUnmanaged: {
            const SwtiUnmanagedType* unmanagedType = (const SwtiUnmanagedType*) tiType;
            if (creator == 0) {
-               CLOG_ERROR("tried to deserialize unmanaged '%s', but no creator was provided", unmanagedType->internal.name);
+               CLOG_ERROR("tried to deserialize unmanaged '%s', but no creator was provided", unmanagedType->internal.name)
                return -2;
            }
            SwampUnmanaged* unmanagedValue = swampUnmanagedAllocate(memory);
            creator(context, unmanagedType, unmanagedValue);
            int errorCode = unmanagedValue->deSerialize(unmanagedValue->ptr, inStream->p, inStream->size - inStream->pos);
            if (errorCode < 0) {
-               CLOG_SOFT_ERROR("could not deserialize unmanaged type %s %d", unmanagedType->internal.name, errorCode);
+               CLOG_SOFT_ERROR("could not deserialize unmanaged type %s %d", unmanagedType->internal.name, errorCode)
                return errorCode;
            }
            inStream->p += errorCode;
@@ -131,7 +131,7 @@ int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
            break;
        }
        default:
-           CLOG_ERROR("can not deserialize dump from type %d", tiType->type);
+           CLOG_ERROR("can not deserialize dump from type %d", tiType->type)
            return -1;
            break;
    }
@@ -149,7 +149,7 @@ static int readVersion(FldInStream* inStream)
 
    int supportedVersion = (major == 0) && (minor == 1);
    if (!supportedVersion) {
-       CLOG_SOFT_ERROR("swamp-dump: wrong version %d.%d.%d", major, minor, patch);
+       CLOG_SOFT_ERROR("swamp-dump: wrong version %d.%d.%d", major, minor, patch)
        return -1;
    }
 

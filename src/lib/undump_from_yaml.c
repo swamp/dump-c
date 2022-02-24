@@ -44,7 +44,7 @@ static int detectIndentation(FldTextInStream* inStream)
     return column / 2;
 }
 
-int requireIndentation(FldTextInStream* inStream, int requiredIndentation)
+static int requireIndentation(FldTextInStream* inStream, int requiredIndentation)
 {
     int indentation = detectIndentation(inStream);
     if (indentation < 0) {
@@ -60,22 +60,22 @@ int requireIndentation(FldTextInStream* inStream, int requiredIndentation)
     return 0;
 }
 
-int isAlpha(char c)
+static int isAlpha(char c)
 {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-int isNumber(char c)
+static int isNumber(char c)
 {
     return (c >= '0' && c <= '9');
 }
 
-int isAlphaNum(char c)
+static int isAlphaNum(char c)
 {
     return isAlpha(c) || isNumber(c);
 }
 
-int skipLeadingSpaces(FldTextInStream* inStream)
+static int skipLeadingSpaces(FldTextInStream* inStream)
 {
     char ch;
     int spacesSkipped = 0;
@@ -96,7 +96,7 @@ int skipLeadingSpaces(FldTextInStream* inStream)
     return spacesSkipped;
 }
 
-int readVariableIdentifier(FldTextInStream* inStream, const char** fieldName)
+static int readVariableIdentifier(FldTextInStream* inStream, const char** fieldName)
 {
     char ch;
     int charsFound = 0;
@@ -120,7 +120,7 @@ int readVariableIdentifier(FldTextInStream* inStream, const char** fieldName)
     return charsFound;
 }
 
-int readTypeIdentifierValue(FldTextInStream* inStream, const char** fieldName)
+static int readTypeIdentifierValue(FldTextInStream* inStream, const char** fieldName)
 {
     int skipErr = skipLeadingSpaces(inStream);
     if (skipErr < 0) {
@@ -130,7 +130,7 @@ int readTypeIdentifierValue(FldTextInStream* inStream, const char** fieldName)
     return readVariableIdentifier(inStream, fieldName);
 }
 
-int skipWhitespaceAndEndOfLine(FldTextInStream* inStream)
+static int skipWhitespaceAndEndOfLine(FldTextInStream* inStream)
 {
     int errorCode = skipLeadingSpaces(inStream);
     if (errorCode < 0) {
@@ -156,7 +156,7 @@ typedef enum Marker {
     MarkerAscii,
 } Marker;
 
-int skipWhitespaceAndBreakMarkerEndOfLine(FldTextInStream* inStream, Marker* marker)
+static int skipWhitespaceAndBreakMarkerEndOfLine(FldTextInStream* inStream, Marker* marker)
 {
     int errorCode = skipLeadingSpaces(inStream);
     if (errorCode < 0) {
@@ -241,7 +241,7 @@ static int readStringUntilEndOfLine(FldTextInStream* inStream, const char** foun
     return charsFound;
 }
 
-int readBlob(FldTextInStream* inStream, int indentation, SwampDynamicMemory* dynamicMemory, const SwampBlob** out)
+static int readBlob(FldTextInStream* inStream, int indentation, SwampDynamicMemory* dynamicMemory, const SwampBlob** out)
 {
     FldTextInStreamState save;
 
@@ -347,11 +347,11 @@ static int readIntegerValue(FldTextInStream* inStream, int32_t* v)
     return 0;
 }
 
-int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredIndentation, const char** fieldName)
+static int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredIndentation, const char** fieldName)
 {
     int errorCode = requireIndentation(inStream, requiredIndentation);
     if (errorCode < 0) {
-        CLOG_SOFT_ERROR("couldn't read fieldname and colon because indentation is wrong");
+        CLOG_SOFT_ERROR("couldn't read fieldname and colon because indentation is wrong")
         return errorCode;
     }
 
@@ -367,7 +367,7 @@ int readFieldNameColonWithIndentation(FldTextInStream* inStream, int requiredInd
     }
 
     if (ch != ':') {
-        CLOG_SOFT_ERROR("expected colon after %s", *fieldName);
+        CLOG_SOFT_ERROR("expected colon after %s", *fieldName)
         return -6;
     }
 
@@ -418,7 +418,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
                     return errorCode;
                 }
                 if (!tc_str_equal(foundName, field->name)) {
-                    CLOG_SOFT_ERROR("field name mismatch. Expected '%s' but got '%s'", field->name, foundName);
+                    CLOG_SOFT_ERROR("field name mismatch. Expected '%s' but got '%s'", field->name, foundName)
                     return -6;
                 }
                 int subIndentation = indentation;
@@ -437,7 +437,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
                                                          target + field->memoryOffsetInfo.memoryOffset,
                                                          field->memoryOffsetInfo.memoryInfo.memorySize);
                 if (resultCode < 0) {
-                    CLOG_SOFT_ERROR("couldn't read value for field %s' (%d)", field->name, resultCode);
+                    CLOG_SOFT_ERROR("couldn't read value for field %s' (%d)", field->name, resultCode)
                     return resultCode;
                 }
             }
@@ -496,7 +496,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
                                                         tempBuffer + listLength * list->memoryInfo.memorySize,
                                                         list->memoryInfo.memorySize);
                 if (errorCode < 0) {
-                    CLOG_SOFT_ERROR("couldn't read list item %d", listLength);
+                    CLOG_SOFT_ERROR("couldn't read list item %d", listLength)
                     return errorCode;
                 }
                 listLength++;
