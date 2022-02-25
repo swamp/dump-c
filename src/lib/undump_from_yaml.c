@@ -37,7 +37,7 @@ static int detectIndentation(FldTextInStream* inStream)
     }
 
     if ((column % 2) != 0) {
-        CLOG_SOFT_ERROR("not a proper indentation column:%d '%c'", column + 1, *inStream->inStream->p);
+        CLOG_SOFT_ERROR("not a proper indentation column:%d '%c'", column + 1, *inStream->inStream->p)
         return -4;
     }
 
@@ -296,7 +296,7 @@ static int checkListContinuation(FldTextInStream* inStream, int indentation)
 
     int detectedIndentation = detectIndentation(inStream);
     if (detectedIndentation < 0) {
-        CLOG_WARN("list wasn't continued because indentation returned error");
+        CLOG_WARN("list wasn't continued because indentation returned error")
         fldTextInStreamSeek(inStream, &save);
         return detectedIndentation;
     }
@@ -405,7 +405,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
         case SwtiTypeRecord: {
             const SwtiRecordType* record = (const SwtiRecordType*) tiType;
             if (record->memoryInfo.memorySize != expectedSize) {
-                CLOG_ERROR("wrong allocation in record");
+                CLOG_ERROR("wrong allocation in record")
             }
             // uint8_t* temp = swampDynamicMemoryAlloc(self, 1, record->memoryInfo.memorySize);
             for (size_t i = 0; i < record->fieldCount; ++i) {
@@ -414,7 +414,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
                 int errorCode = readFieldNameColonWithIndentation(inStream, indentation, &foundName);
                 if (errorCode < 0) {
                     CLOG_SOFT_ERROR("couldn't read field '%s' encountered '%s' errorCode:%d", field->name, foundName,
-                                    errorCode);
+                                    errorCode)
                     return errorCode;
                 }
                 if (!tc_str_equal(foundName, field->name)) {
@@ -447,7 +447,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
         case SwtiTypeArray: {
             const SwtiArrayType* array = (const SwtiArrayType*) tiType;
             if (expectedSize != 8) {
-                CLOG_ERROR("needs space to story array pointer");
+                CLOG_ERROR("needs space to story array pointer")
             }
 
             uint8_t listLength = 0;
@@ -545,11 +545,11 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
                                            expectedSize);
         }
         case SwtiTypeFunction: {
-            CLOG_SOFT_ERROR("functions can not be serialized");
+            CLOG_SOFT_ERROR("functions can not be serialized")
             return -1;
         }
         case SwtiTypeResourceName: {
-            CLOG_SOFT_ERROR("resource names can not be serialized");
+            CLOG_SOFT_ERROR("resource names can not be serialized")
             return -1;
         }
         case SwtiTypeBlob: {
@@ -562,7 +562,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
             break;
         }
         default:
-            CLOG_ERROR("can not deserialize dump from type %d", tiType->type);
+            CLOG_ERROR("can not deserialize dump from type %d", tiType->type)
             return -1;
             break;
     }
