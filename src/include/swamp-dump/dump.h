@@ -13,14 +13,14 @@ struct SwtiUnmanagedType;
 struct FldInStream;
 struct FldOutStream;
 struct SwampDynamicMemory;
-
+struct SwampUnmanagedMemory;
 
 int swampDumpToOctets(struct FldOutStream* stream, const void* v, const struct SwtiType* type);
 int swampDumpToOctetsRaw(struct FldOutStream* stream, const void* v, const struct SwtiType* type);
 
 
 int swampDumpFromOctets(struct FldInStream* inStream, const struct SwtiType* tiType, unmanagedTypeCreator creator,
-                        void* context, void* target, struct SwampDynamicMemory* memory);
+                        void* context, void* target, struct SwampDynamicMemory* memory, struct SwampUnmanagedMemory* targetUnmanagedMemory);
 int swampDumpFromOctetsRaw(struct FldInStream* inStream, const struct SwtiType* tiType, unmanagedTypeCreator creator,
-                           void* context,void* target, struct SwampDynamicMemory* memory);
+                           void* context,void* target, struct SwampDynamicMemory* memory, struct SwampUnmanagedMemory* targetUnmanagedMemory);
 #endif

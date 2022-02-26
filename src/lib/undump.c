@@ -9,9 +9,10 @@
 #include <tiny-libc/tiny_libc.h>
 #include <swamp-runtime/dynamic_memory.h>
 #include <swamp-runtime/swamp_allocate.h>
+#include <swamp-runtime/context.h>
 
 static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiType,
-                             unmanagedTypeCreator creator, void* context, void* target, SwampDynamicMemory* memory)
+                             unmanagedTypeCreator creator, void* context, void* target, SwampDynamicMemory* memory, SwampUnmanagedMemory* targetUnmanagedMemory)
 {
    switch (tiType->type) {
        case SwtiTypeInt: {
@@ -39,7 +40,7 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
            const SwtiRecordType* recordType = (const SwtiRecordType*) tiType;
            for (size_t i = 0; i < recordType->fieldCount; ++i) {
                const SwtiRecordTypeField* field = &recordType->fields[i];
-               swampDumpFromOctetsHelper(inStream, field->fieldType, creator, context, (uint8_t *)target + field->memoryOffsetInfo.memoryOffset, memory);
+               swampDumpFromOctetsHelper(inStream, field->fieldType, creator, context, (uint8_t *)target + field->memoryOffsetInfo.memoryOffset, memory, targetUnmanagedMemory);
            }
            break;
        }
@@ -48,7 +49,7 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
            const SwtiTupleType* tupleType = (const SwtiTupleType*) tiType;
            for (size_t i = 0; i < tupleType->fieldCount; ++i) {
                const SwtiTupleTypeField* field = &tupleType->fields[i];
-               swampDumpFromOctetsHelper(inStream, field->fieldType, creator, context, (uint8_t *)target + field->memoryOffsetInfo.memoryOffset, memory);
+               swampDumpFromOctetsHelper(inStream, field->fieldType, creator, context, (uint8_t *)target + field->memoryOffsetInfo.memoryOffset, memory, targetUnmanagedMemory);
            }
            break;
        }
@@ -61,7 +62,7 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
            *(uint8_t*) target = enumIndex;
            for (size_t i = 0; i < variant->paramCount; ++i) {
                const SwtiCustomTypeVariantField* field = &variant->fields[i];
-               swampDumpFromOctetsHelper(inStream, field->fieldType, creator, context, (uint8_t *)target + field->memoryOffsetInfo.memoryOffset, memory);
+               swampDumpFromOctetsHelper(inStream, field->fieldType, creator, context, (uint8_t *)target + field->memoryOffsetInfo.memoryOffset, memory, targetUnmanagedMemory);
            }
            break;
        }
@@ -72,7 +73,7 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
            fldInStreamReadUInt8(inStream, &arrayLength);
            SwampArray* array = swampArrayAllocatePrepare(memory, arrayLength, arrayType->memoryInfo.memorySize, arrayType->memoryInfo.memoryAlign);
            for (size_t i = 0; i < arrayLength; ++i) {
-               swampDumpFromOctetsHelper(inStream, arrayType->itemType, creator, context, (uint8_t *)array->value + i * array->itemSize, memory);
+               swampDumpFromOctetsHelper(inStream, arrayType->itemType, creator, context, (uint8_t *)array->value + i * array->itemSize, memory, targetUnmanagedMemory);
            }
 
            *(const SwampArray**) target = array;
@@ -85,7 +86,7 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
            fldInStreamReadUInt8(inStream, &listLength);
            SwampList* list = swampListAllocatePrepare(memory, listLength, listType->memoryInfo.memorySize, listType->memoryInfo.memoryAlign);
            for (size_t i = 0; i < listLength; ++i) {
-               swampDumpFromOctetsHelper(inStream, listType->itemType, creator, context, (uint8_t *)list->value + i * list->itemSize, memory);
+               swampDumpFromOctetsHelper(inStream, listType->itemType, creator, context, (uint8_t *)list->value + i * list->itemSize, memory, targetUnmanagedMemory);
            }
 
            *(const SwampList**) target = list;
@@ -94,7 +95,7 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
 
        case SwtiTypeAlias: {
            const SwtiAliasType* alias = (const SwtiAliasType*) tiType;
-           return swampDumpFromOctetsHelper(inStream, alias->targetType, creator, context, target, memory);
+           return swampDumpFromOctetsHelper(inStream, alias->targetType, creator, context, target, memory, targetUnmanagedMemory);
        }
        case SwtiTypeFunction: {
            CLOG_SOFT_ERROR("functions can not be serialized")
@@ -118,7 +119,9 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
                CLOG_ERROR("tried to deserialize unmanaged '%s', but no creator was provided", unmanagedType->internal.name)
                return -2;
            }
-           SwampUnmanaged* unmanagedValue = swampUnmanagedAllocate(memory);
+
+           SwampUnmanaged* unmanagedValue = swampUnmanagedMemoryAllocate(targetUnmanagedMemory, unmanagedType->internal.name);
+           //swampUnmanagedMemoryAdd(targetUnmanagedMemory, unmanagedValue);
            creator(context, unmanagedType, unmanagedValue);
            int errorCode = unmanagedValue->deSerialize(unmanagedValue->ptr, inStream->p, inStream->size - inStream->pos);
            if (errorCode < 0) {
@@ -157,18 +160,18 @@ static int readVersion(FldInStream* inStream)
 }
 
 int swampDumpFromOctets(FldInStream* inStream, const SwtiType* tiType,
-                       unmanagedTypeCreator creator, void* context, void* target, SwampDynamicMemory* memory)
+                       unmanagedTypeCreator creator, void* context, void* target, SwampDynamicMemory* memory, SwampUnmanagedMemory* targetUnmanagedMemory)
 {
    int error;
    if ((error = readVersion(inStream)) < 0) {
        return error;
    }
 
-   return swampDumpFromOctetsHelper(inStream, tiType, creator, context, target, memory);
+   return swampDumpFromOctetsHelper(inStream, tiType, creator, context, target, memory, targetUnmanagedMemory);
 }
 
 int swampDumpFromOctetsRaw(FldInStream* inStream, const SwtiType* tiType,
-                          unmanagedTypeCreator creator, void* context, void* target, SwampDynamicMemory* memory)
+                          unmanagedTypeCreator creator, void* context, void* target, SwampDynamicMemory* memory, SwampUnmanagedMemory* targetUnmanagedMemory)
 {
-   return swampDumpFromOctetsHelper(inStream, tiType, creator, context, target, memory);
+   return swampDumpFromOctetsHelper(inStream, tiType, creator, context, target, memory, targetUnmanagedMemory);
 }
