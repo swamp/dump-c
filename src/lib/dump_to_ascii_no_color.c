@@ -6,7 +6,6 @@
 #include <flood/out_stream.h>
 #include <stdarg.h>
 #include <swamp-dump/types.h>
-#include <swamp-runtime/print.h>
 #include <swamp-typeinfo/typeinfo.h>
 
 static void printTabs(FldOutStream* fp, int indentation)
