@@ -12,21 +12,21 @@ static int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const Sw
     switch (type->type) {
         case SwtiTypeBoolean: {
             const SwampBool truth = *(SwampBool*)v;
-            fldOutStreamWriteUInt8(stream, truth);
+            return fldOutStreamWriteUInt8(stream, truth);
         } break;
         case SwtiTypeInt: {
             SwampInt32 value = *(SwampInt32*)v;
-            fldOutStreamWriteInt32(stream, value);
+            return fldOutStreamWriteInt32(stream, value);
         } break;
         case SwtiTypeFixed: {
             SwampFixed32 value = *(SwampFixed32*)v;
-            fldOutStreamWriteInt32(stream, value);
+            return fldOutStreamWriteInt32(stream, value);
         } break;
         case SwtiTypeString: {
             const SwampString* p = * (const SwampString**) v;
             size_t stringLength = p->characterCount;
             fldOutStreamWriteUInt8(stream, stringLength+1); // include zero terminator
-            fldOutStreamWriteOctets(stream, (const uint8_t*) p->characters, stringLength+1);
+            return fldOutStreamWriteOctets(stream, (const uint8_t*) p->characters, stringLength+1);
         } break;
         case SwtiTypeRecord: {
             const SwtiRecordType* record = (const SwtiRecordType*) type;
@@ -85,7 +85,7 @@ static int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const Sw
             if (blob->octetCount > 32 * 1024) {
                 CLOG_ERROR("swampDumpToOctets: blob size is too large")
             }
-            fldOutStreamWriteOctets(stream, blob->octets, blob->octetCount);
+            return fldOutStreamWriteOctets(stream, blob->octets, blob->octetCount);
         } break;
         case SwtiTypeAlias: {
             const SwtiAliasType* alias = (const SwtiAliasType*) type;
