@@ -7,10 +7,10 @@
 
 #include <swamp-runtime/types.h>
 #include <swamp-typeinfo/typeinfo.h>
+
 struct FldOutStream;
 
-
-int swampDumpToAsciiNoColor(const swamp_value* v, const SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
-const char* swampDumpToAsciiStringNoColor(const swamp_value* v, const SwtiType* type, int flags, char* target, size_t maxCount);
+int swampDumpToAsciiNoColor(const uint8_t * v, const SwtiType* type, int flags, int indentation, struct FldOutStream* fp);
+const char* swampDumpToAsciiStringNoColor(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount);
 
 #endif

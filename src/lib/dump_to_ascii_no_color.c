@@ -6,7 +6,9 @@
 #include <flood/out_stream.h>
 #include <stdarg.h>
 #include <swamp-dump/types.h>
+#include <swamp-runtime/types.h>
 #include <swamp-typeinfo/typeinfo.h>
+#include <swamp-dump/dump_ascii_no_color.h>
 
 static void printTabs(FldOutStream* fp, int indentation)
 {
@@ -34,7 +36,7 @@ static void printNewLineWithDots(FldOutStream* fp, int indentation)
     printDots(fp, indentation);
 }
 
-static void printWithColorf(FldOutStream* fp, int fg, const char* s, ...)
+static void printWithColorf(FldOutStream* fp, const char* s, ...)
 {
     va_list pl;
 
@@ -49,128 +51,133 @@ static int typeIsSimple(const SwtiType* type)
     return (v == SwtiTypeBoolean) || (v == SwtiTypeInt) || (v == SwtiTypeFixed) || (v == SwtiTypeString);
 }
 
-static int swampDumpToAsciiNoColor(const void* v, const SwtiType* type, int flags, int indentation, FldOutStream* fp)
+int swampDumpToAsciiNoColor(const uint8_t * v, const SwtiType* type, int flags, int indentation, FldOutStream* fp)
 {
-    /*
     switch (type->type) {
         case SwtiTypeBoolean: {
-            swamp_bool value = swamp_value_bool(v);
-            printWithColorf(fp, 92, "%s", value ? "True" : "False");
+            SwampBool value = *((const SwampBool*)v);
+            printWithColorf(fp, "%s", value ? "True" : "False");
         } break;
         case SwtiTypeInt: {
-            swamp_int32 value = swamp_value_int(v);
+            SwampInt32 value = *((const SwampInt32 *)v);
 
-            printWithColorf(fp, 91, "%d", value);
+            printWithColorf(fp, "%d", value);
         } break;
         case SwtiTypeFixed: {
-            swamp_int32 value = swamp_value_int(v);
+            SwampFixed32 value = *((const SwampFixed32 *)v);
 
-            printWithColorf(fp, 91, "%f", value / 100.0f);
+            printWithColorf(fp, "%.3f", value / (float)SWAMP_FIXED_FACTOR);
         } break;
         case SwtiTypeString: {
-            const swamp_string* p = swamp_value_string(v);
-            printWithColorf(fp, 91, "\"");
-            printWithColorf(fp, 33, "%s", p->characters);
-            printWithColorf(fp, 91, "\"");
+            const SwampString* p = *((const SwampString**)v);
+            if (p->characterCount > 32*1024) {
+                CLOG_ERROR("can not have these long strings")
+            }
+            if (!(flags & swampDumpFlagNoStringQuotesOnce)) {
+                printWithColorf(fp, "\"");
+            }
+            printWithColorf(fp, "%s", p->characters);
+            if (!(flags & swampDumpFlagNoStringQuotesOnce)) {
+                printWithColorf(fp, "\"");
+            }
         } break;
         case SwtiTypeRecord: {
-            const swamp_struct* p = swamp_value_struct(v);
             const SwtiRecordType* record = (const SwtiRecordType*) type;
-            if (p->info.field_count != record->fieldCount) {
-                for (size_t i = 0; i < record->fieldCount; ++i) {
-                    CLOG_SOFT_ERROR("  field:%s", record->fields[i].name);
-                }
-                swamp_value_print(p, "unknown struct");
-                CLOG_ERROR("problem with field count %s %zd", record->internal.name, p->info.field_count);
-                return -2;
-            }
-            printWithColorf(fp, 94, "{ ", fp);
+            printWithColorf(fp, "{ ", fp);
             for (size_t i = 0; i < record->fieldCount; i++) {
                 const SwtiRecordTypeField* field = &record->fields[i];
                 if (i > 0) {
                     if (!typeIsSimple(field->fieldType)) {
                         printNewLineWithTabs(fp, indentation);
                     }
-                    printWithColorf(fp, 35, ", ");
+                    printWithColorf(fp, ", ");
                 }
-                printWithColorf(fp, 92, field->name);
-                printWithColorf(fp, 32, " = ");
-                int errorCode = swampDumpToAsciiNoColor(p->fields[i], field->fieldType, flags, indentation + 1, fp);
+                printWithColorf(fp, field->name);
+                printWithColorf(fp, " = ");
+                int errorCode = swampDumpToAsciiNoColor(v + field->memoryOffsetInfo.memoryOffset, field->fieldType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
             }
-            printWithColorf(fp, 94, " }");
+            printWithColorf(fp, " }");
         } break;
         case SwtiTypeArray: {
-            const swamp_struct* p = swamp_value_struct(v);
-            const SwtiArrayType* array = (const SwtiArrayType*) type;
+            const SwtiArrayType* arrayType = ((const SwtiArrayType*) type);
+            const SwampArray* array = *(const SwampArray**) v;
 
-            printWithColorf(fp, 94, "[| ", fp);
-            for (size_t i = 0; i < p->info.field_count; i++) {
+            const uint8_t* p = array->value;
+            printWithColorf(fp, "[| ", fp);
+            for (size_t i = 0; i < array->count; i++) {
                 if (i > 0) {
                     printNewLineWithTabs(fp, indentation);
-                    printWithColorf(fp, 35, ", ");
+                    printWithColorf(fp, ", ");
                 }
-                int errorCode = swampDumpToAsciiNoColor(p->fields[i], array->itemType, flags, indentation + 1, fp);
+                int errorCode = swampDumpToAsciiNoColor(p, arrayType->itemType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
-            }
-            printWithColorf(fp, 94, " |]");
-        } break;
-        case SwtiTypeTuple: {
-            const swamp_struct* p = swamp_value_struct(v);
-            const SwtiTupleType* tuple = (const SwtiTupleType*) type;
 
-            if (p->info.field_count != tuple->parameterCount) {
-                CLOG_SOFT_ERROR("mismatch tuple and struct types here");
-                return -48;
+                p += array->itemSize;
             }
-            printWithColorf(fp, 94, "( ", fp);
-            for (size_t i = 0; i < p->info.field_count; i++) {
+            printWithColorf(fp, " |]");
+        } break;
+        case SwtiTypeList: {
+            const SwampList* list = *((const SwampList**) v);
+            const SwtiListType* listType = (const SwtiListType*) type;
+
+            printWithColorf(fp, "[ ", fp);
+            const uint8_t* itemPointer = list->value;
+            for (size_t i=0; i<list->count; ++i) {
                 if (i > 0) {
                     printNewLineWithTabs(fp, indentation);
-                    printWithColorf(fp, 35, ", ");
+                    printWithColorf(fp, ", ");
                 }
-                int errorCode = swampDumpToAsciiNoColor(p->fields[i], tuple->parameterTypes[i], flags | swampDumpFlagAliasOnce,
+                int errorCode = swampDumpToAsciiNoColor(itemPointer, listType->itemType, flags, indentation + 1, fp);
+                if (errorCode != 0) {
+                    return errorCode;
+                }
+                itemPointer += list->itemSize;
+            }
+            printWithColorf(fp, " ]");
+        } break;
+        case SwtiTypeTuple: {
+            const SwtiTupleType* tuple = (const SwtiTupleType*) type;
+
+            printWithColorf(fp, "( ", fp);
+            for (size_t i = 0; i < tuple->fieldCount; i++) {
+                const SwtiTupleTypeField* field = &tuple->fields[i];
+                if (i > 0) {
+                    printNewLineWithTabs(fp, indentation);
+                    printWithColorf(fp, ", ");
+                }
+                int errorCode = swampDumpToAsciiNoColor(v + field->memoryOffsetInfo.memoryOffset, field->fieldType, flags | swampDumpFlagAliasOnce,
                                                  indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
             }
-            printWithColorf(fp, 94, " )");
+            printWithColorf(fp, " )");
         } break;
-        case SwtiTypeList: {
-            const swamp_list* p = swamp_value_list(v);
-            const SwtiArrayType* array = (const SwtiArrayType*) type;
 
-            printWithColorf(fp, 94, "[ ", fp);
-            int i = 0;
-            SWAMP_LIST_FOR_LOOP(p)
-            if (i > 0) {
-                printNewLineWithTabs(fp, indentation);
-                printWithColorf(fp, 35, ", ");
-            }
-            int errorCode = swampDumpToAsciiNoColor(value, array->itemType, flags, indentation + 1, fp);
-            if (errorCode != 0) {
-                return errorCode;
-            }
-            i++;
-            SWAMP_LIST_FOR_LOOP_END()
-            printWithColorf(fp, 94, " ]");
-        } break;
         case SwtiTypeFunction:
             CLOG_SOFT_ERROR("can not dump functions")
             return -1;
-        case SwtiTypeUnmanaged:
-            printWithColorf(fp, 94, "<@>");
+        case SwtiTypeUnmanaged: {
+            const SwampUnmanaged* unmanaged = *(const SwampUnmanaged**) v;
+            printWithColorf(fp, "< (%p) ", (void*)unmanaged);
+            if (unmanaged->toString) {
+                size_t writtenCharacterCount = unmanaged->toString(unmanaged->ptr, 0, fp->p, fp->size - fp->pos - 8);
+                fp->pos += writtenCharacterCount;
+                fp->p += writtenCharacterCount;
+            }
+            printWithColorf(fp, ">");
             return 0;
+        }
         case SwtiTypeAlias: {
             const SwtiAliasType* alias = (const SwtiAliasType*) type;
             if (flags & swampDumpFlagAlias || flags & swampDumpFlagAliasOnce) {
-                printWithColorf(fp, 92, alias->internal.name);
-                printWithColorf(fp, 91, " => ");
+                printWithColorf(fp, alias->internal.name);
+                printWithColorf(fp, " => ");
             }
             int errorCode = swampDumpToAsciiNoColor(v, alias->targetType, flags & ~swampDumpFlagAliasOnce, indentation + 1,
                                              fp);
@@ -181,17 +188,20 @@ static int swampDumpToAsciiNoColor(const void* v, const SwtiType* type, int flag
         }
         case SwtiTypeCustom: {
             const SwtiCustomType* custom = (const SwtiCustomType*) type;
-            const swamp_enum* p = swamp_value_enum(v);
-            const SwtiCustomTypeVariant* variant = &custom->variantTypes[p->enum_type];
-            if (flags & swampDumpFlagCustomTypeVariantPrefix) {
-                printWithColorf(fp, 91, custom->internal.name);
-                printWithColorf(fp, 93, ":");
+            const uint8_t* p = (const uint8_t*)v;
+            if (*p >= custom->variantCount) {
+                CLOG_ERROR("illegal variant index %d", *p);
             }
-            printWithColorf(fp, 95, variant->name);
+            const SwtiCustomTypeVariant* variant = &custom->variantTypes[*p];
+            if (flags & swampDumpFlagCustomTypeVariantPrefix) {
+                printWithColorf(fp, custom->internal.name);
+                printWithColorf(fp, ":");
+            }
+            printWithColorf(fp, variant->name);
             for (size_t i = 0; i < variant->paramCount; ++i) {
-                printWithColorf(fp, 91, " ");
-                const SwtiType* paramType = variant->paramTypes[i];
-                int errorCode = swampDumpToAsciiNoColor(p->fields[i], paramType, flags, indentation + 1, fp);
+                printWithColorf(fp, " ");
+                const SwtiCustomTypeVariantField* field = &variant->fields[i];
+                int errorCode = swampDumpToAsciiNoColor(p + field->memoryOffsetInfo.memoryOffset, field->fieldType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }
@@ -199,11 +209,11 @@ static int swampDumpToAsciiNoColor(const void* v, const SwtiType* type, int flag
             break;
         }
         case SwtiTypeBlob: {
-            const swamp_blob* blob = swamp_value_blob(v);
-            printWithColorf(fp, 91, "blob %d", blob->octet_count);
+            const SwampBlob* blob = *((const SwampBlob**) v);
+            printWithColorf(fp, "blob %d", blob->octetCount);
 
             if (flags & swampDumpFlagBlobExpanded) {
-                size_t count = blob->octet_count > 2048 ? 2048 : blob->octet_count;
+                size_t count = blob->octetCount > 2048 ? 2048 : blob->octetCount;
                 if (flags & swampDumpFlagBlobAutoFormat) {
                     int allIsPrintable = 1;
                     for (size_t i = 0; i < count; ++i) {
@@ -222,48 +232,48 @@ static int swampDumpToAsciiNoColor(const void* v, const SwtiType* type, int flag
                         if ((i % 64) == 0) {
                             printNewLineWithDots(fp, indentation + 1);
                         }
-                        printWithColorf(fp, 37, "%c", blob->octets[i]);
+                        printWithColorf(fp, "%c", blob->octets[i]);
                     }
                 } else {
                     for (size_t i = 0; i < count; ++i) {
                         if ((i % 32) == 0) {
                             printNewLineWithDots(fp, indentation + 1);
                         }
-                        printWithColorf(fp, 12, "%02X ", blob->octets[i]);
+                        printWithColorf(fp, "%02X ", blob->octets[i]);
                     }
                 }
             }
             break;
         }
         case SwtiTypeChar: {
-            swamp_int32 ordinalValue = swamp_value_int(v);
-            printWithColorf(fp, 91, "'");
-            printWithColorf(fp, 33, "%c", (char) ordinalValue);
-            printWithColorf(fp, 91, "'");
+            SwampCharacter ordinalValue = *((const SwampCharacter *)v);
+            printWithColorf(fp, "'");
+            printWithColorf(fp, "%c", (char) ordinalValue);
+            printWithColorf(fp, "'");
             break;
         }
         case SwtiTypeAny: {
-            printWithColorf(fp, 91, "ANY");
+            printWithColorf(fp, "ANY");
             break;
         }
         case SwtiTypeAnyMatchingTypes: {
-            printWithColorf(fp, 91, "*");
+            printWithColorf(fp, "*");
             break;
         }
         case SwtiTypeResourceName: {
-            printWithColorf(fp, 33, "@");
+            printWithColorf(fp, "@");
             break;
         }
+
         default: {
             CLOG_ERROR("unknown type %d", type->type);
         }
     }
-     */
 
     return 0;
 }
 
-static const char* swampDumpToAsciiStringNoColor(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount)
+const char* swampDumpToAsciiStringNoColor(const void* v, const SwtiType* type, int flags, char* target, size_t maxCount)
 {
     FldOutStream outStream;
 

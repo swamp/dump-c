@@ -74,9 +74,13 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             if (p->characterCount > 32*1024) {
                 CLOG_ERROR("can not have these long strings")
             }
-            printWithColorf(fp, 91, "\"");
+            if (!(flags & swampDumpFlagNoStringQuotesOnce)) {
+                printWithColorf(fp, 91, "\"");
+            }
             printWithColorf(fp, 33, "%s", p->characters);
-            printWithColorf(fp, 91, "\"");
+            if (!(flags & swampDumpFlagNoStringQuotesOnce)) {
+                printWithColorf(fp, 91, "\"");
+            }
         } break;
         case SwtiTypeRecord: {
             const SwtiRecordType* record = (const SwtiRecordType*) type;
