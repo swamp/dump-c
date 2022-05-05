@@ -386,6 +386,14 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
             }
             *(SwampInt32*) target = v;
         } break;
+        case SwtiTypeRefId: {
+            int32_t v;
+            int errorCode = readIntegerValue(inStream, &v);
+            if (errorCode < 0) {
+                return errorCode;
+            }
+            *(SwampInt32*) target = v;
+        } break;
         case SwtiTypeBoolean: {
             int truth = readBoolean(inStream);
             if (truth < 0) {

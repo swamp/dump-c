@@ -19,6 +19,10 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
            fldInStreamReadInt32(inStream, (SwampInt32*) target);
        } break;
 
+       case SwtiTypeRefId: {
+           fldInStreamReadInt32(inStream, (SwampInt32*) target);
+       } break;
+
        case SwtiTypeBoolean: {
            tc_memcpy_octets(target, inStream->p, sizeof(SwampBool));
            inStream->p += sizeof(SwampBool);
@@ -134,7 +138,7 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
            break;
        }
        default:
-           CLOG_ERROR("can not deserialize dump from type %d", tiType->type)
+           CLOG_ERROR("swampDumpFromOctetsHelper: can not deserialize dump from type %d", tiType->type)
            return -1;
            break;
    }

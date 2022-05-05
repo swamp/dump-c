@@ -64,6 +64,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
 
             printWithColorf(fp, 91, "%d", value);
         } break;
+
         case SwtiTypeFixed: {
             SwampFixed32 value = *((const SwampFixed32 *)v);
 
@@ -187,6 +188,14 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             }
             break;
         }
+        case SwtiTypeRefId: {
+            const SwtiTypeRefIdType* typeRefId = (const SwtiTypeRefIdType *) type;
+            SwampInt32 value = *((const SwampInt32 *)v);
+
+            printWithColorf(fp, 92, "$");
+            printWithColorf(fp, 91, typeRefId->referencedType->name);
+            printWithColorf(fp, 92, "(%d)", value);
+        } break;
         case SwtiTypeCustom: {
             const SwtiCustomType* custom = (const SwtiCustomType*) type;
             const uint8_t* p = (const uint8_t*)v;
@@ -253,6 +262,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             printWithColorf(fp, 91, "'");
             break;
         }
+
         case SwtiTypeAny: {
             printWithColorf(fp, 91, "ANY");
             break;
