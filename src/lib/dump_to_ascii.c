@@ -200,9 +200,9 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             const SwtiCustomType* custom = (const SwtiCustomType*) type;
             const uint8_t* p = (const uint8_t*)v;
             if (*p >= custom->variantCount) {
-                CLOG_ERROR("illegal variant index %d", *p);
+                CLOG_ERROR("swampDumpToAscii: illegal variant index %d", *p);
             }
-            const SwtiCustomTypeVariant* variant = &custom->variantTypes[*p];
+            const SwtiCustomTypeVariant* variant = custom->variantTypes[*p];
             if (flags & swampDumpFlagCustomTypeVariantPrefix) {
                 printWithColorf(fp, 91, custom->internal.name);
                 printWithColorf(fp, 93, ":");
@@ -212,6 +212,23 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
                 printWithColorf(fp, 91, " ");
                 const SwtiCustomTypeVariantField* field = &variant->fields[i];
                 int errorCode = swampDumpToAscii(p + field->memoryOffsetInfo.memoryOffset, field->fieldType, flags, indentation + 1, fp);
+                if (errorCode != 0) {
+                    return errorCode;
+                }
+            }
+            break;
+        }
+        case SwtiTypeCustomVariant: {
+            const SwtiCustomTypeVariant * variant = (const SwtiCustomTypeVariant*) type;
+            if (flags & swampDumpFlagCustomTypeVariantPrefix) {
+                printWithColorf(fp, 91, variant->internal.name);
+                printWithColorf(fp, 93, ":");
+            }
+            printWithColorf(fp, 95, variant->name);
+            for (size_t i = 0; i < variant->paramCount; ++i) {
+                printWithColorf(fp, 91, " ");
+                const SwtiCustomTypeVariantField* field = &variant->fields[i];
+                int errorCode = swampDumpToAscii(v + field->memoryOffsetInfo.memoryOffset, field->fieldType, flags, indentation + 1, fp);
                 if (errorCode != 0) {
                     return errorCode;
                 }

@@ -62,7 +62,7 @@ static int swampDumpFromOctetsHelper(FldInStream* inStream, const SwtiType* tiTy
            const SwtiCustomType* custom = (const SwtiCustomType*) tiType;
            uint8_t enumIndex;
            fldInStreamReadUInt8(inStream, &enumIndex);
-           const SwtiCustomTypeVariant* variant = &custom->variantTypes[enumIndex];
+           const SwtiCustomTypeVariant* variant = custom->variantTypes[enumIndex];
            *(uint8_t*) target = enumIndex;
            for (size_t i = 0; i < variant->paramCount; ++i) {
                const SwtiCustomTypeVariantField* field = &variant->fields[i];

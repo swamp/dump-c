@@ -95,7 +95,7 @@ static int swampDumpToOctetsHelper(FldOutStream* stream, const void* v, const Sw
             const SwtiCustomType* customType = (const SwtiCustomType*) type;
             const uint8_t enumValue = *(const uint8_t*)v;
             fldOutStreamWriteUInt8(stream, enumValue);
-            const SwtiCustomTypeVariant* variant = &customType->variantTypes[enumValue];
+            const SwtiCustomTypeVariant* variant = customType->variantTypes[enumValue];
             for (size_t i = 0; i < variant->paramCount; ++i) {
                 const SwtiType* paramType = variant->fields[i].fieldType;
                 int error;

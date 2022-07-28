@@ -526,7 +526,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
 
             int enumIndex = -1;
             for (size_t i = 0; i < custom->variantCount; ++i) {
-                const SwtiCustomTypeVariant* variant = &custom->variantTypes[i];
+                const SwtiCustomTypeVariant* variant = custom->variantTypes[i];
                 if (tc_str_equal(variant->name, foundVariantName)) {
                     enumIndex = i;
                     break;
@@ -536,7 +536,7 @@ static int swampDumpFromYamlHelper(FldTextInStream* inStream, int indentation, S
                 return -4;
             }
 
-            const SwtiCustomTypeVariant* variant = &custom->variantTypes[enumIndex];
+            const SwtiCustomTypeVariant* variant = custom->variantTypes[enumIndex];
             *target = (uint8_t) enumIndex;
             for (size_t i = 0; i < variant->paramCount; ++i) {
                 const SwtiType* paramType = variant->fields[i].fieldType;
