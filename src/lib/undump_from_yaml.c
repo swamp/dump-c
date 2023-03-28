@@ -137,7 +137,7 @@ static int skipWhitespaceAndEndOfLine(FldTextInStream* inStream)
         return errorCode;
     }
 
-    uint8_t ch;
+    char ch;
     int error = fldTextInStreamReadCh(inStream, &ch);
     if (error < 0) {
         return error;
@@ -306,7 +306,7 @@ static int checkListContinuation(FldTextInStream* inStream, int indentation)
         return 0;
     }
 
-    uint8_t ch;
+    char ch;
     int error = fldTextInStreamReadCh(inStream, &ch);
     if (error < 0) {
         fldTextInStreamSeek(inStream, &save);

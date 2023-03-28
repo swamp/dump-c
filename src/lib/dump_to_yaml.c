@@ -11,7 +11,7 @@
 static void printTabs(FldOutStream* fp, int indentation)
 {
     for (size_t i = 0; i < indentation; ++i) {
-        fldOutStreamWriteOctets(fp, "  ", 2);
+        fldOutStreamWriteOctets(fp, (const uint8_t *) "  ", 2);
     }
 }
 
@@ -24,7 +24,7 @@ static void printNewLineWithTabs(FldOutStream* fp, int indentation)
 static void printDots(FldOutStream* fp, int indentation)
 {
     for (size_t i = 0; i < indentation; ++i) {
-        fldOutStreamWriteOctets(fp, "  ", 2);
+        fldOutStreamWriteOctets(fp, (const uint8_t *)"  ", 2);
     }
 }
 

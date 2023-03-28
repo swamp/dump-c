@@ -12,7 +12,7 @@
 static void printTabs(FldOutStream* fp, int indentation)
 {
     for (size_t i = 0; i < indentation; ++i) {
-        fldOutStreamWriteOctets(fp, "    ", 4);
+        fldOutStreamWriteOctets(fp, (const uint8_t*)"    ", 4);
     }
 }
 
@@ -25,7 +25,7 @@ static void printNewLineWithTabs(FldOutStream* fp, int indentation)
 static void printDots(FldOutStream* fp, int indentation)
 {
     for (size_t i = 0; i < indentation; ++i) {
-        fldOutStreamWriteOctets(fp, "..", 2);
+        fldOutStreamWriteOctets(fp, (const uint8_t*) "..", 2);
     }
 }
 
@@ -168,7 +168,7 @@ int swampDumpToAscii(const uint8_t * v, const SwtiType* type, int flags, int ind
             const SwampUnmanaged* unmanaged = *(const SwampUnmanaged**) v;
             printWithColorf(fp, 94, "< (%p) ", (void*)unmanaged);
             if (unmanaged->toString) {
-                size_t writtenCharacterCount = unmanaged->toString(unmanaged->ptr, 0, fp->p, fp->size - fp->pos - 8);
+                size_t writtenCharacterCount = unmanaged->toString(unmanaged->ptr, 0, (char*)fp->p, fp->size - fp->pos - 8);
                 fp->pos += writtenCharacterCount;
                 fp->p += writtenCharacterCount;
             }
